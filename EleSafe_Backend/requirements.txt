@@ -1,0 +1,30 @@
+# Flask and API
+Flask
+Flask-CORS
+
+# Machine Learning
+scikit-learn
+joblib
+numpy
+pandas
+
+# Geospatial processing
+geopandas
+shapely
+pyproj
+rasterio
+fiona
+
+# Optional: LSTM (if doing Model 2)
+# tensorflow==2.15.0
+
+# Data validation
+pydantic
+
+# Visualization (for model evaluation)
+matplotlib
+seaborn
+
+# Excel file support
+openpyxl
+xlrd
