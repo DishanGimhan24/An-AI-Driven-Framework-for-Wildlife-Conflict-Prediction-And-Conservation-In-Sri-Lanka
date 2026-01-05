@@ -1,118 +1,118 @@
 {
   "accuracy": 0.9922774296954685,
-  "roc_auc": 0.9994689683191577,
+  "roc_auc": 0.9994885009093695,
   "classification_report": {
     "0": {
-      "precision": 0.9932846715328467,
-      "recall": 0.9912587412587412,
-      "f1-score": 0.992270672305673,
+      "precision": 0.9935728892784107,
+      "recall": 0.990967365967366,
+      "f1-score": 0.9922684172137126,
       "support": 3432.0
     },
     "1": {
-      "precision": 0.9912739965095986,
-      "recall": 0.9932964150393472,
-      "f1-score": 0.9922841752802446,
+      "precision": 0.9909883720930233,
+      "recall": 0.9935878752550277,
+      "f1-score": 0.9922864211905108,
       "support": 3431.0
     },
     "accuracy": 0.9922774296954685,
     "macro avg": {
-      "precision": 0.9922793340212226,
-      "recall": 0.9922775781490443,
-      "f1-score": 0.9922774237929588,
+      "precision": 0.992280630685717,
+      "recall": 0.9922776206111968,
+      "f1-score": 0.9922774192021118,
       "support": 6863.0
     },
     "weighted avg": {
-      "precision": 0.9922794805078191,
+      "precision": 0.9922808189792611,
       "recall": 0.9922774296954685,
-      "f1-score": 0.9922774228092072,
+      "f1-score": 0.9922774178904422,
       "support": 6863.0
     }
   },
   "confusion_matrix": [
     [
-      3402,
-      30
+      3401,
+      31
     ],
     [
-      23,
-      3408
+      22,
+      3409
     ]
   ],
   "feature_importance": [
     {
       "feature": "Season_encoded",
-      "importance": 0.6946213245391846
+      "importance": 0.6952528357505798
     },
     {
       "feature": "Elevation",
-      "importance": 0.04979269951581955
+      "importance": 0.04994373396039009
     },
     {
       "feature": "WaterDistance",
-      "importance": 0.041020795702934265
-    },
-    {
-      "feature": "LC_40.0",
-      "importance": 0.03531172499060631
-    },
-    {
-      "feature": "HumanDistance",
-      "importance": 0.03180722892284393
+      "importance": 0.036711305379867554
     },
     {
       "feature": "LC_30.0",
-      "importance": 0.02943190559744835
+      "importance": 0.03479274734854698
+    },
+    {
+      "feature": "LC_40.0",
+      "importance": 0.034452009946107864
+    },
+    {
+      "feature": "HumanDistance",
+      "importance": 0.03183547034859657
     },
     {
       "feature": "Protected",
-      "importance": 0.024462865665555
+      "importance": 0.022742122411727905
     },
     {
       "feature": "RoadDistance",
-      "importance": 0.02240672893822193
+      "importance": 0.02139648236334324
     },
     {
       "feature": "NDVI_normalized",
-      "importance": 0.01864645630121231
+      "importance": 0.018791234120726585
     },
     {
       "feature": "LC_80.0",
-      "importance": 0.014958479441702366
+      "importance": 0.013884552754461765
     },
     {
       "feature": "Month",
-      "importance": 0.011150377802550793
+      "importance": 0.010747096501290798
     },
     {
       "feature": "LC_10.0",
-      "importance": 0.008657452650368214
-    },
-    {
-      "feature": "DayOfWeek",
-      "importance": 0.005456720013171434
+      "importance": 0.009023025631904602
     },
     {
       "feature": "LC_60.0",
-      "importance": 0.005028747953474522
+      "importance": 0.007627427112311125
+    },
+    {
+      "feature": "DayOfWeek",
+      "importance": 0.004869045689702034
     },
     {
       "feature": "LC_20.0",
-      "importance": 0.002713598310947418
+      "importance": 0.00337783875875175
     },
     {
       "feature": "Hour",
-      "importance": 0.0025577140040695667
+      "importance": 0.0023852698504924774
     },
     {
       "feature": "TimeOfDay_encoded",
-      "importance": 0.0019752441439777613
-    },
-    {
-      "feature": "LC_90.0",
-      "importance": 0.0
+      "importance": 0.002167843282222748
     },
     {
       "feature": "LC_50.0",
+      "importance": 0.0
+    },
+    {
+      "feature": "LC_90.0",
       "importance": 0.0
     }
   ],

@@ -1,8 +1,63 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Circle, Marker, Popup, Polyline, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, Marker, Popup, Polyline, Polygon, useMapEvents } from "react-leaflet";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+// Function to calculate rectangle around corridor based on human distance
+const calculateCorridorRectangle = (corridor) => {
+  const path = corridor.path;
+  if (path.length < 2) return null;
+  
+  // Get start and end points
+  const start = path[0];
+  const end = path[path.length - 1];
+  
+  // Calculate direction vector
+  const dx = end.lon - start.lon;
+  const dy = end.lat - start.lat;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  if (length === 0) return null;
+  
+  // Normalize direction vector
+  const dirX = dx / length;
+  const dirY = dy / length;
+  
+  // Calculate perpendicular vector (rotate 90 degrees)
+  const perpX = -dirY;
+  const perpY = dirX;
+  
+  // Convert avg_human_distance from meters to approximate degrees
+  // 1 degree ≈ 111,320 meters at equator, adjust for latitude
+  const avgLat = (start.lat + end.lat) / 2;
+  const metersPerDegreeLat = 111320;
+  const metersPerDegreeLon = 111320 * Math.cos(avgLat * Math.PI / 180);
+  
+  const offsetLat = corridor.avg_human_distance / metersPerDegreeLat;
+  const offsetLon = corridor.avg_human_distance / metersPerDegreeLon;
+  
+  // Calculate the 4 corners of the rectangle
+  // Using perpendicular offset for width
+  const corner1 = [
+    start.lat + perpY * offsetLat,
+    start.lon + perpX * offsetLon
+  ];
+  const corner2 = [
+    start.lat - perpY * offsetLat,
+    start.lon - perpX * offsetLon
+  ];
+  const corner3 = [
+    end.lat - perpY * offsetLat,
+    end.lon - perpX * offsetLon
+  ];
+  const corner4 = [
+    end.lat + perpY * offsetLat,
+    end.lon + perpX * offsetLon
+  ];
+  
+  return [corner1, corner4, corner3, corner2];
+};
 
 // Function to determine district based on coordinates (approximate boundaries)
 const getDistrict = (lat, lon) => {
@@ -66,6 +121,8 @@ export default function ElephantMap() {
   const [elephantCountFilter, setElephantCountFilter] = useState("All");
   const [timeFilter, setTimeFilter] = useState("All");
   const [showCorridors, setShowCorridors] = useState(true);
+  const [selectedCorridor, setSelectedCorridor] = useState(null);
+  const [humanDistanceRect, setHumanDistanceRect] = useState(null);
 
   // Component to track zoom level
   function ZoomTracker() {
@@ -180,6 +237,20 @@ export default function ElephantMap() {
     if (safety_score < 30) return 0.85;
     if (safety_score < 60) return 0.75;
     return 0.65;
+  };
+
+  // Handle corridor click to show human distance rectangle
+  const handleCorridorClick = (corridor) => {
+    if (selectedCorridor === corridor.corridor_id) {
+      // If same corridor clicked, hide the rectangle
+      setSelectedCorridor(null);
+      setHumanDistanceRect(null);
+    } else {
+      // Show rectangle for clicked corridor
+      setSelectedCorridor(corridor.corridor_id);
+      const rect = calculateCorridorRectangle(corridor);
+      setHumanDistanceRect({ rect, corridor });
+    }
   };
 
   return (
@@ -382,6 +453,8 @@ export default function ElephantMap() {
               setElephantCountFilter("All");
               setSelectedDistrict("All");
               setTimeFilter("All");
+              setSelectedCorridor(null);
+              setHumanDistanceRect(null);
             }}
             style={{
               width: "100%",
@@ -392,11 +465,35 @@ export default function ElephantMap() {
               color: "white",
               border: "none",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
+              marginBottom: selectedCorridor ? "10px" : "0"
             }}
           >
             Reset All Filters
           </button>
+
+          {/* Clear Human Distance Rectangle */}
+          {selectedCorridor && (
+            <button
+              onClick={() => {
+                setSelectedCorridor(null);
+                setHumanDistanceRect(null);
+              }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                fontSize: "13px",
+                fontWeight: "bold",
+                backgroundColor: "#2196F3",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}
+            >
+              Hide Human Distance Zone
+            </button>
+          )}
         </div>
 
       {/* Legend */}
@@ -431,9 +528,13 @@ export default function ElephantMap() {
         </div>
         <div style={{ borderTop: "1px solid #e0e0e0", paddingTop: "10px", marginTop: "10px" }}>
           <div style={{ fontSize: "11px", color: "#666", marginBottom: "4px" }}>🐘 Hotspot Zones</div>
-          <div style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center" }}>
+          <div style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center", marginBottom: "4px" }}>
             <div style={{ width: "30px", height: "3px", background: "linear-gradient(90deg, #d32f2f 0%, #d32f2f 50%, transparent 50%, transparent 100%)", backgroundSize: "10px 3px", marginRight: "8px" }}></div>
             <span>Corridors</span>
+          </div>
+          <div style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center" }}>
+            <div style={{ width: "20px", height: "12px", backgroundColor: "#2196F3", opacity: 0.3, marginRight: "8px", border: "1px dashed #2196F3" }}></div>
+            <span>Human Distance (click corridor)</span>
           </div>
         </div>
       </div>
@@ -475,6 +576,7 @@ export default function ElephantMap() {
                 lineJoin: "round"
               }}
               eventHandlers={{
+                click: () => handleCorridorClick(corridor),
                 mouseover: (e) => {
                   e.target.setStyle({ weight: corridorWidth + 2, opacity: 1 });
                 },
@@ -532,6 +634,57 @@ export default function ElephantMap() {
           </>
         );
       })}
+
+      {/* Human Distance Rectangle around selected corridor */}
+      {humanDistanceRect && humanDistanceRect.rect && (
+        <Polygon
+          positions={humanDistanceRect.rect}
+          pathOptions={{
+            color: "#2196F3",
+            weight: 2,
+            fillColor: "#2196F3",
+            fillOpacity: 0.15,
+            dashArray: "5, 5"
+          }}
+        >
+          <Popup>
+            <div style={{ minWidth: "200px" }}>
+              <div style={{ 
+                borderBottom: "2px solid #2196F3", 
+                paddingBottom: "8px", 
+                marginBottom: "8px",
+                fontWeight: "600",
+                fontSize: "14px",
+                color: "#333"
+              }}>
+                📏 Human Distance Zone
+              </div>
+              <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#555" }}>
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Corridor:</strong> {humanDistanceRect.corridor.corridor_id}
+                </div>
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Avg Human Distance:</strong> {(humanDistanceRect.corridor.avg_human_distance / 1000).toFixed(2)} km
+                </div>
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Distance (meters):</strong> {humanDistanceRect.corridor.avg_human_distance.toFixed(0)} m
+                </div>
+                <div style={{ 
+                  marginTop: "8px", 
+                  padding: "6px", 
+                  backgroundColor: "#2196F320",
+                  borderRadius: "4px",
+                  textAlign: "center",
+                  fontSize: "11px"
+                }}>
+                  Rectangle width represents the average distance to human settlements from this corridor
+                </div>
+              </div>
+            </div>
+          </Popup>
+        </Polygon>
+      )}
+
       {filteredNodes.map((n, i) => {
         const nodeColor = getColor(n.safety_score);
         return (
