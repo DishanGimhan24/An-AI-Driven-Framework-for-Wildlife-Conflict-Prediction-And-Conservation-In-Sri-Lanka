@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Circle, Marker, Popup, Polyline, Polygon, useMapEvents } from "react-leaflet";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -494,6 +495,29 @@ export default function ElephantMap() {
               Hide Human Distance Zone
             </button>
           )}
+
+          {/* Predict Link */}
+          <Link
+            to="/predict"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "12px",
+              marginTop: "15px",
+              fontSize: "13px",
+              fontWeight: "bold",
+              backgroundColor: "#1a237e",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              textDecoration: "none",
+              textAlign: "center",
+              boxSizing: "border-box"
+            }}
+          >
+            🔮 Predict Risk at Location
+          </Link>
         </div>
 
       {/* Legend */}
