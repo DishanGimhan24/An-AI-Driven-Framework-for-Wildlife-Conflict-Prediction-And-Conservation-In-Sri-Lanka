@@ -40,6 +40,8 @@ export default function PredictPage() {
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [hour, setHour] = useState(new Date().getHours());
+  const [showNavigationModal, setShowNavigationModal] = useState(false);
+  const [navigationTarget, setNavigationTarget] = useState(null);
 
   const handleLocationSelect = async (latlng) => {
     setSelectedLocation(latlng);
@@ -57,13 +59,47 @@ export default function PredictPage() {
         longitude: latlng.lng,
         datetime: datetime
       });
-      setPrediction(response.data);
+      
+      const result = response.data;
+      setPrediction(result);
+      
+      // Check if location is too far from elephant activity
+      if (result.distance_to_node > 25000) {
+        // Show custom navigation modal for distant locations
+        const distanceKm = (result.distance_to_node / 1000).toFixed(1);
+        setNavigationTarget({
+          distanceKm,
+          targetLat: result.nearest_node.center_lat,
+          targetLon: result.nearest_node.center_lon,
+          nodeId: result.nearest_node.node_id
+        });
+        setShowNavigationModal(true);
+      }
     } catch (err) {
       console.error("Error fetching prediction:", err);
       setError(err.response?.data?.detail || err.message || "Failed to fetch prediction");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNavigateToZone = () => {
+    if (navigationTarget) {
+      setSelectedLocation({
+        lat: navigationTarget.targetLat,
+        lng: navigationTarget.targetLon
+      });
+      setShowNavigationModal(false);
+      // Re-fetch prediction for new location
+      handleLocationSelect({
+        lat: navigationTarget.targetLat,
+        lng: navigationTarget.targetLon
+      });
+    }
+  };
+
+  const handleStayHere = () => {
+    setShowNavigationModal(false);
   };
 
   const getRiskColor = (riskLevel) => {
@@ -87,7 +123,7 @@ export default function PredictPage() {
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{
+      {/** */} <div style={{
         backgroundColor: "#1a237e",
         color: "white",
         padding: "15px 20px",
@@ -595,7 +631,194 @@ export default function PredictPage() {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.1); }
         }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
       `}</style>
+
+      {/* Custom Navigation Modal */}
+      {showNavigationModal && navigationTarget && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000,
+          backdropFilter: "blur(4px)"
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "20px",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            maxWidth: "500px",
+            width: "90%",
+            overflow: "hidden",
+            animation: "slideIn 0.3s ease-out"
+          }}>
+            {/* Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              padding: "30px",
+              textAlign: "center",
+              color: "white"
+            }}>
+              <div style={{ fontSize: "64px", marginBottom: "15px" }}>🗺️</div>
+              <h2 style={{ margin: "0 0 10px 0", fontSize: "24px", fontWeight: "600" }}>
+                Location Too Far
+              </h2>
+              <p style={{ margin: 0, fontSize: "14px", opacity: 0.9 }}>
+                No elephant activity detected in this area
+              </p>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: "30px" }}>
+              {/* Distance Info */}
+              <div style={{
+                backgroundColor: "#fff3e0",
+                borderRadius: "12px",
+                padding: "20px",
+                marginBottom: "20px",
+                border: "2px solid #ff9800"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "24px", marginRight: "10px" }}>📏</span>
+                  <div>
+                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "3px" }}>
+                      Distance to Nearest Activity Zone
+                    </div>
+                    <div style={{ fontSize: "28px", fontWeight: "700", color: "#f57c00" }}>
+                      {navigationTarget.distanceKm} km
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Cards */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "12px",
+                marginBottom: "25px"
+              }}>
+                <div style={{
+                  backgroundColor: "#e8f5e9",
+                  borderRadius: "10px",
+                  padding: "15px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "24px", marginBottom: "5px" }}>🐘</div>
+                  <div style={{ fontSize: "11px", color: "#666", marginBottom: "3px" }}>Nearest Zone</div>
+                  <div style={{ fontSize: "16px", fontWeight: "600", color: "#2e7d32" }}>
+                    Node #{navigationTarget.nodeId}
+                  </div>
+                </div>
+                <div style={{
+                  backgroundColor: "#e3f2fd",
+                  borderRadius: "10px",
+                  padding: "15px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "24px", marginBottom: "5px" }}>✅</div>
+                  <div style={{ fontSize: "11px", color: "#666", marginBottom: "3px" }}>Current Risk</div>
+                  <div style={{ fontSize: "16px", fontWeight: "600", color: "#1976d2" }}>
+                    Low
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p style={{
+                fontSize: "14px",
+                lineHeight: "1.6",
+                color: "#555",
+                marginBottom: "25px",
+                textAlign: "center"
+              }}>
+                This location is outside the monitored elephant activity zones. 
+                Would you like to navigate to the nearest active zone for detailed predictions?
+              </p>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={handleStayHere}
+                  style={{
+                    flex: 1,
+                    padding: "14px 20px",
+                    backgroundColor: "#f5f5f5",
+                    color: "#555",
+                    border: "2px solid #e0e0e0",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = "#eeeeee";
+                    e.target.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = "#f5f5f5";
+                    e.target.style.transform = "translateY(0)";
+                  }}
+                >
+                  <span>📍</span>
+                  Stay Here
+                </button>
+                <button
+                  onClick={handleNavigateToZone}
+                  style={{
+                    flex: 1,
+                    padding: "14px 20px",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 6px 16px rgba(102, 126, 234, 0.5)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.4)";
+                  }}
+                >
+                  <span>🧭</span>
+                  Navigate to Zone
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

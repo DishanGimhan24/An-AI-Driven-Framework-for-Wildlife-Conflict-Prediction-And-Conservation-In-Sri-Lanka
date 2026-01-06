@@ -559,6 +559,32 @@ async def predict_risk(input_data: RiskPredictionInput):
         nearest_corridor, dist_to_corridor = find_nearest_corridor(
             input_data.latitude, input_data.longitude)
 
+        # ============================================================================
+        # DISTANCE THRESHOLD CHECK - Prevent misleading predictions for distant locations
+        # ============================================================================
+        MAX_SAFE_DISTANCE = 25000  # 25km threshold
+
+        if dist_to_node > MAX_SAFE_DISTANCE:
+            # Location is too far from any elephant activity
+            return RiskPredictionOutput(
+                risk_level="Low",
+                elephant_probability=0.0,
+                conflict_risk_score=0.0,
+                near_corridor=False,
+                nearest_node=nearest_node,
+                distance_to_node=float(dist_to_node),
+                nearest_corridor=None,
+                distance_to_corridor=None,
+                interpolated_from=None,
+                recommendations=[
+                    f"This location is {dist_to_node/1000:.1f}km from the nearest elephant activity zone",
+                    "No significant elephant activity recorded in this area",
+                    "Risk level: LOW - No wildlife conflict expected",
+                    f"Nearest recorded elephant activity is {dist_to_node/1000:.1f}km away in Node #{nearest_node['node_id']}",
+                    f"💡 Suggestion: Navigate to lat: {nearest_node['center_lat']:.4f}, lon: {nearest_node['center_lon']:.4f} to see active elephant zones"
+                ]
+            )
+
         # Prepare features for prediction (lat/lon used for interpolation, NOT as features)
         features, interpolated = prepare_features(
             input_data.latitude,
