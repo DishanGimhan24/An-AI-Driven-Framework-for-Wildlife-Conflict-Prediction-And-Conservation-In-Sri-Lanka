@@ -63,6 +63,32 @@ class NodeInfo(BaseModel):
     safety_score: float = 0.0
 
 
+class RoadCrossingInfo(BaseModel):
+    """Road crossing point on an elephant corridor"""
+    crossing_id: str
+    corridor_id: str
+    road_osm_id: int
+    road_type: str
+    crossing_lat: float
+    crossing_lon: float
+    # Usage stats
+    crossing_count: int
+    elephant_count: int
+    elephants: List[str]
+    # Timing
+    hour_distribution: dict
+    season_distribution: dict
+    night_ratio: float
+    peak_hours: List[int]
+    peak_season: str
+    peak_time_of_day: str
+    # Danger
+    avg_human_distance: float
+    traffic_exposure: float
+    danger_score: float
+    danger_level: str
+
+
 class CorridorInfo(BaseModel):
     """Corridor path information"""
     corridor_id: str
@@ -75,6 +101,7 @@ class CorridorInfo(BaseModel):
     active_hours: List[int]
     safety_score: float
     avg_human_distance: float
+    road_crossings: Optional[List[dict]] = []
 
 
 class RiskPredictionOutput(BaseModel):
@@ -465,11 +492,14 @@ async def root():
             "health": "/health",
             "corridors": "/corridors",
             "nodes": "/nodes",
+            "road_crossings": "/road-crossings",
+            "road_crossings_summary": "/road-crossings/summary",
             "predict_risk": "/predict_risk"
         },
         "corridor_network": {
             "total_nodes": len(corridor_network['nodes']),
-            "total_corridors": len(corridor_network['corridors'])
+            "total_corridors": len(corridor_network['corridors']),
+            "total_road_crossings": len(corridor_network.get('road_crossings', []))
         }
     }
 
@@ -533,6 +563,88 @@ async def get_corridor_detail(corridor_id: str):
 
     raise HTTPException(
         status_code=404, detail=f"Corridor {corridor_id} not found")
+
+
+@app.get("/road-crossings", response_model=List[RoadCrossingInfo])
+async def get_all_road_crossings(
+    danger_level: Optional[str] = None,
+    corridor_id: Optional[str] = None,
+    min_crossings: Optional[int] = None
+):
+    """
+    Get all detected road crossings along elephant corridors.
+
+    Optional filters:
+    - danger_level: High | Medium | Low
+    - corridor_id: filter to a specific corridor
+    - min_crossings: minimum number of elephant crossing events
+    """
+    crossings = corridor_network.get('road_crossings', [])
+
+    if danger_level:
+        crossings = [c for c in crossings if c['danger_level'] == danger_level]
+    if corridor_id:
+        crossings = [c for c in crossings if c['corridor_id'] == corridor_id]
+    if min_crossings is not None:
+        crossings = [c for c in crossings if c['crossing_count'] >= min_crossings]
+
+    return sorted(crossings, key=lambda x: x['danger_score'], reverse=True)
+
+
+@app.get("/road-crossings/summary")
+async def get_road_crossings_summary():
+    """Summary statistics for all road crossings"""
+    crossings = corridor_network.get('road_crossings', [])
+
+    if not crossings:
+        return {"total": 0, "by_danger": {}, "by_road_type": {}, "top_dangerous": []}
+
+    by_danger = {}
+    by_type = {}
+    by_season = {}
+    night_crossings = 0
+
+    for c in crossings:
+        by_danger[c['danger_level']] = by_danger.get(c['danger_level'], 0) + 1
+        by_type[c['road_type']]      = by_type.get(c['road_type'], 0) + 1
+        by_season[c['peak_season']]  = by_season.get(c['peak_season'], 0) + 1
+        if c['night_ratio'] > 0.5:
+            night_crossings += 1
+
+    top5 = sorted(crossings, key=lambda x: x['danger_score'], reverse=True)[:5]
+
+    return {
+        "total": len(crossings),
+        "by_danger_level": by_danger,
+        "by_road_type": by_type,
+        "by_peak_season": by_season,
+        "primarily_night_crossings": night_crossings,
+        "top_5_dangerous": [
+            {
+                "crossing_id": c['crossing_id'],
+                "corridor_id": c['corridor_id'],
+                "road_type": c['road_type'],
+                "danger_level": c['danger_level'],
+                "danger_score": c['danger_score'],
+                "night_ratio": c['night_ratio'],
+                "crossing_count": c['crossing_count'],
+                "peak_season": c['peak_season'],
+                "peak_time_of_day": c['peak_time_of_day'],
+                "lat": c['crossing_lat'],
+                "lon": c['crossing_lon']
+            }
+            for c in top5
+        ]
+    }
+
+
+@app.get("/road-crossings/{crossing_id}", response_model=RoadCrossingInfo)
+async def get_road_crossing_detail(crossing_id: str):
+    """Get detailed information for a specific road crossing"""
+    for c in corridor_network.get('road_crossings', []):
+        if c['crossing_id'] == crossing_id:
+            return c
+    raise HTTPException(status_code=404, detail=f"Road crossing '{crossing_id}' not found")
 
 
 @app.post("/predict_risk", response_model=RiskPredictionOutput)

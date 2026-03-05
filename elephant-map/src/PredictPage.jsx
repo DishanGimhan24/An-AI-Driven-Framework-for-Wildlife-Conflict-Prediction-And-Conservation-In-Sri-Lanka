@@ -121,41 +121,8 @@ export default function PredictPage() {
   };
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      {/** */} <div style={{
-        backgroundColor: "#1a237e",
-        color: "white",
-        padding: "15px 20px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
-      }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}>
-            🐘 Wildlife Conflict Prediction
-          </h1>
-          <p style={{ margin: "5px 0 0 0", fontSize: "12px", opacity: 0.8 }}>
-            Click anywhere on the map to predict elephant activity risk
-          </p>
-        </div>
-        <Link 
-          to="/" 
-          style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            textDecoration: "none",
-            fontSize: "14px",
-            fontWeight: "500",
-            transition: "background-color 0.2s"
-          }}
-        >
-          ← Back to Map
-        </Link>
-      </div>
+    <div style={{ height: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}>
+
 
       <div style={{ flex: 1, display: "flex", position: "relative" }}>
         {/* Map Container */}

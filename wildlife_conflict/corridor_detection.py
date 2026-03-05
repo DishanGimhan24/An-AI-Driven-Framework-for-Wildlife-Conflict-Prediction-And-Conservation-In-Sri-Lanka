@@ -18,7 +18,7 @@ print("="*70)
 # 1. LOAD ELEPHANT DATA
 # ============================================================================
 
-print("\n[1/5] Loading elephant GPS data...")
+print("\n[1/6] Loading elephant GPS data...")
 df = pd.read_csv('./outputs/elephant_data.csv')
 df['Datetime_standard'] = pd.to_datetime(df['Datetime_standard'])
 df = df.sort_values(['EleID', 'Datetime_standard'])
@@ -32,7 +32,7 @@ print(
 # 2. CREATE NODES (DBSCAN CLUSTERING WITH HAVERSINE)
 # ============================================================================
 
-print("\n[2/5] Creating nodes (high-use zones)...")
+print("\n[2/6] Creating nodes (high-use zones)...")
 
 # Prepare coordinates for clustering (convert to radians for haversine)
 coords_radians = np.radians(df[['latitude', 'longitude']].values)
@@ -113,7 +113,7 @@ print(f"   Nodes created: {len(nodes)}")
 # 3. BUILD CORRIDORS (EDGES BETWEEN NODES)
 # ============================================================================
 
-print("\n[3/5] Building corridors (paths between nodes)...")
+print("\n[3/6] Building corridors (paths between nodes)...")
 
 # Track transitions for each elephant
 corridors_dict = {}
@@ -217,7 +217,7 @@ print(f"   Corridors created: {len(corridors)}")
 # 4. CALCULATE CORRIDOR SAFETY SCORES
 # ============================================================================
 
-print("\n[4/5] Calculating corridor safety scores...")
+print("\n[4/6] Calculating corridor safety scores...")
 
 for corridor in corridors:
     # Get nodes along corridor
@@ -250,10 +250,202 @@ corridors = sorted(corridors, key=lambda x: x['usage_count'], reverse=True)
 print(f"   Safety scores calculated")
 
 # ============================================================================
-# 5. SAVE CORRIDOR NETWORK
+# 5. ROAD CROSSING ANALYSIS
+#    Detect where corridors cross roads, how often, when, and danger level
 # ============================================================================
 
-print("\n[5/5] Saving corridor network...")
+print("\n[5/6] Detecting road crossings along corridors...")
+
+# Load full raw elephant data (includes RoadName, RoadDistance, Season, HumanDistance)
+df_raw = pd.read_csv('./outputs/elephant_data.csv')
+df_raw['Datetime_standard'] = pd.to_datetime(df_raw['Datetime_standard'], errors='coerce')
+
+# Season map
+season_map = {
+    12: 'Dry', 1: 'Dry', 2: 'Dry',
+    3: 'Inter-Monsoon', 4: 'Inter-Monsoon', 5: 'Inter-Monsoon',
+    6: 'Southwest-Monsoon', 7: 'Southwest-Monsoon', 8: 'Southwest-Monsoon',
+    9: 'Inter-Monsoon-2', 10: 'Inter-Monsoon-2', 11: 'Inter-Monsoon-2'
+}
+df_raw['Month'] = df_raw['Datetime_standard'].dt.month
+df_raw['Season'] = df_raw['Month'].map(season_map).fillna('Unknown')
+df_raw['Hour'] = df_raw['Datetime_standard'].dt.hour
+
+# Filter to only points near a road (RoadDistance < 500m)
+road_threshold_m = 500
+df_near_road = df_raw[df_raw['RoadDistance'] < road_threshold_m].copy()
+print(f"   GPS points within {road_threshold_m}m of a road: {len(df_near_road):,}")
+
+# Compute: which road IDs appear most globally (proxy for traffic volume)
+road_global_counts = df_raw['RoadName'].value_counts()
+
+def point_to_segment_distance_m(plat, plon, alat, alon, blat, blon):
+    """Approx distance in metres from point P to segment A-B using haversine."""
+    from math import radians, sin, cos, sqrt, atan2
+    def hav(la1, lo1, la2, lo2):
+        R = 6371000
+        la1, lo1, la2, lo2 = map(radians, [la1, lo1, la2, lo2])
+        a = sin((la2-la1)/2)**2 + cos(la1)*cos(la2)*sin((lo2-lo1)/2)**2
+        return R * 2 * atan2(sqrt(a), sqrt(1-a))
+
+    ab = hav(alat, alon, blat, blon)
+    if ab < 1:   # degenerate segment
+        return hav(plat, plon, alat, alon)
+
+    # Project P onto infinite line A->B in degree-space (fast approx)
+    dx, dy = blon - alon, blat - alat
+    t = ((plon - alon)*dx + (plat - alat)*dy) / (dx*dx + dy*dy)
+    t = max(0.0, min(1.0, t))
+    clat = alat + t*dy
+    clon = alon + t*dx
+    return hav(plat, plon, clat, clon)
+
+# Corridor buffer: GPS point is "on corridor" if within CORRIDOR_BUFFER_M of its line
+CORRIDOR_BUFFER_M = 2000   # 2 km
+
+all_road_crossings = []   # flat list for the top-level network key
+
+for corridor in corridors:
+    from_node_data = next(n for n in nodes if n['node_id'] == corridor['from_node'])
+    to_node_data   = next(n for n in nodes if n['node_id'] == corridor['to_node'])
+
+    alat, alon = from_node_data['center_lat'], from_node_data['center_lon']
+    blat, blon = to_node_data['center_lat'],   to_node_data['center_lon']
+
+    # Find near-road points that lie along this corridor
+    crossing_events = []
+    for _, row in df_near_road.iterrows():
+        dist = point_to_segment_distance_m(
+            row['latitude'], row['longitude'], alat, alon, blat, blon)
+        if dist < CORRIDOR_BUFFER_M:
+            crossing_events.append(row)
+
+    if not crossing_events:
+        corridor['road_crossings'] = []
+        continue
+
+    ce_df = pd.DataFrame(crossing_events)
+
+    # Group by RoadName → each unique road ID is one crossing point
+    road_crossings = []
+    for road_id, grp in ce_df.groupby('RoadName'):
+        hours = grp['Hour'].dropna().astype(int).tolist()
+        seasons = grp['Season'].dropna().tolist()
+        night_count = sum(1 for h in hours if h < 6 or h >= 18)
+        night_ratio = night_count / len(hours) if hours else 0
+
+        hour_dist = {}
+        for h in hours:
+            hour_dist[str(h)] = hour_dist.get(str(h), 0) + 1
+
+        season_dist = {}
+        for s in seasons:
+            season_dist[s] = season_dist.get(s, 0) + 1
+
+        avg_human_dist = float(grp['HumanDistance'].mean()) if 'HumanDistance' in grp else 5000
+        crossing_count = len(grp)
+        elephant_count = grp['Name'].nunique() if 'Name' in grp else 1
+
+        # --- Road danger classification ---
+        # traffic_exposure: how frequently this road ID appears globally
+        global_hits = int(road_global_counts.get(road_id, 1))
+        max_hits    = int(road_global_counts.max()) if len(road_global_counts) > 0 else 1
+        traffic_score = min(global_hits / max_hits, 1.0)   # 0-1
+
+        # Road type label based on traffic percentile
+        pct = traffic_score
+        if pct > 0.7:
+            road_type = "Major Road"
+        elif pct > 0.3:
+            road_type = "Secondary Road"
+        else:
+            road_type = "Minor Road"
+
+        # Danger score (0-100)
+        # 40% night crossings, 30% human proximity, 20% crossing frequency, 10% traffic
+        human_proximity_score = max(0, 1 - avg_human_dist / 5000)
+        freq_score = min(crossing_count / 30, 1.0)
+        danger_score = (
+            night_ratio * 40 +
+            human_proximity_score * 30 +
+            freq_score * 20 +
+            traffic_score * 10
+        )
+
+        if danger_score >= 55:
+            danger_level = "High"
+        elif danger_score >= 30:
+            danger_level = "Medium"
+        else:
+            danger_level = "Low"
+
+        # Peak crossing hours (top 3)
+        peak_hours = sorted(hour_dist, key=hour_dist.get, reverse=True)[:3]
+        peak_hours_int = [int(h) for h in peak_hours]
+
+        # Peak season
+        peak_season = max(season_dist, key=season_dist.get) if season_dist else 'Unknown'
+
+        # Most common time-of-day label
+        def time_label(h):
+            if h < 6 or h >= 22: return 'Night'
+            if h < 10: return 'Early Morning'
+            if h < 14: return 'Midday'
+            if h < 18: return 'Afternoon'
+            return 'Evening'
+
+        tol_dist = {}
+        for h in hours:
+            lbl = time_label(h)
+            tol_dist[lbl] = tol_dist.get(lbl, 0) + 1
+        peak_time_of_day = max(tol_dist, key=tol_dist.get) if tol_dist else 'Unknown'
+
+        crossing = {
+            'crossing_id': f"{corridor['corridor_id']}_road_{int(road_id)}",
+            'corridor_id': corridor['corridor_id'],
+            'road_osm_id': int(road_id),
+            'road_type': road_type,
+            'crossing_lat': float(grp['latitude'].mean()),
+            'crossing_lon': float(grp['longitude'].mean()),
+            # Stats
+            'crossing_count': crossing_count,
+            'elephant_count': elephant_count,
+            'elephants': grp['Name'].unique().tolist() if 'Name' in grp else [],
+            # Timing
+            'hour_distribution': hour_dist,
+            'season_distribution': season_dist,
+            'night_ratio': float(round(night_ratio, 3)),
+            'peak_hours': peak_hours_int,
+            'peak_season': peak_season,
+            'peak_time_of_day': peak_time_of_day,
+            # Road danger
+            'avg_human_distance': float(round(avg_human_dist, 1)),
+            'traffic_exposure': float(round(traffic_score, 3)),
+            'danger_score': float(round(danger_score, 1)),
+            'danger_level': danger_level,
+        }
+        road_crossings.append(crossing)
+        all_road_crossings.append(crossing)
+
+    # Sort by danger score descending within corridor
+    road_crossings.sort(key=lambda x: x['danger_score'], reverse=True)
+    corridor['road_crossings'] = road_crossings
+
+total_crossings = sum(len(c['road_crossings']) for c in corridors)
+high_danger   = sum(1 for rc in all_road_crossings if rc['danger_level'] == 'High')
+medium_danger = sum(1 for rc in all_road_crossings if rc['danger_level'] == 'Medium')
+low_danger    = sum(1 for rc in all_road_crossings if rc['danger_level'] == 'Low')
+
+print(f"   Road crossings detected: {total_crossings}")
+print(f"     High danger : {high_danger}")
+print(f"     Medium danger: {medium_danger}")
+print(f"     Low danger  : {low_danger}")
+
+# ============================================================================
+# 6. SAVE CORRIDOR NETWORK
+# ============================================================================
+
+print("\n[6/6] Saving corridor network...")
 
 
 def convert_to_json_serializable(obj):
@@ -276,6 +468,8 @@ network = {
     'metadata': {
         'total_nodes': len(nodes),
         'total_corridors': len(corridors),
+        'total_road_crossings': total_crossings,
+        'road_crossing_danger': {'High': high_danger, 'Medium': medium_danger, 'Low': low_danger},
         'elephants_tracked': int(df['Name'].nunique()),
         'date_range': {
             'start': str(df['Datetime_standard'].min()),
@@ -289,7 +483,8 @@ network = {
         'generated_at': str(pd.Timestamp.now())
     },
     'nodes': convert_to_json_serializable(nodes),
-    'corridors': convert_to_json_serializable(corridors)
+    'corridors': convert_to_json_serializable(corridors),
+    'road_crossings': convert_to_json_serializable(all_road_crossings)
 }
 
 # Save as JSON

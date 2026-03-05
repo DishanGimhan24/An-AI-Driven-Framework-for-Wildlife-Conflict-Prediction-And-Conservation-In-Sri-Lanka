@@ -124,7 +124,6 @@ export default function ElephantMap() {
   const [showCorridors, setShowCorridors] = useState(true);
   const [selectedCorridor, setSelectedCorridor] = useState(null);
   const [humanDistanceRect, setHumanDistanceRect] = useState(null);
-
   // Component to track zoom level
   function ZoomTracker() {
     useMapEvents({
@@ -181,6 +180,7 @@ export default function ElephantMap() {
       .catch((error) => {
         console.error("Error fetching corridors:", error);
       });
+
   }, []);
 
   console.log("Current nodes state:", nodes);
@@ -299,7 +299,7 @@ export default function ElephantMap() {
       <MapContainer
         center={[7.8731, 80.7718]}   // Sri Lanka center
         zoom={8}
-        style={{ height: "100vh", width: "100%" }}
+        style={{ height: "calc(100vh - 60px)", width: "100%" }}
         maxBounds={[[5.5, 79.0], [10.0, 82.5]]}
         minZoom={7}
       >
@@ -336,7 +336,7 @@ export default function ElephantMap() {
           </div>
 
           {/* Show Corridors Toggle */}
-          <div style={{ marginBottom: "15px" }}>
+          <div style={{ marginBottom: "8px" }}>
             <label style={{ fontSize: "13px", display: "flex", alignItems: "center", cursor: "pointer" }}>
               <input 
                 type="checkbox" 
@@ -496,28 +496,6 @@ export default function ElephantMap() {
             </button>
           )}
 
-          {/* Predict Link */}
-          <Link
-            to="/predict"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "12px",
-              marginTop: "15px",
-              fontSize: "13px",
-              fontWeight: "bold",
-              backgroundColor: "#1a237e",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              textDecoration: "none",
-              textAlign: "center",
-              boxSizing: "border-box"
-            }}
-          >
-            🔮 Predict Risk at Location
-          </Link>
         </div>
 
       {/* Legend */}
@@ -556,7 +534,7 @@ export default function ElephantMap() {
             <div style={{ width: "30px", height: "3px", background: "linear-gradient(90deg, #d32f2f 0%, #d32f2f 50%, transparent 50%, transparent 100%)", backgroundSize: "10px 3px", marginRight: "8px" }}></div>
             <span>Corridors</span>
           </div>
-          <div style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center" }}>
+          <div style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center", marginBottom: "4px" }}>
             <div style={{ width: "20px", height: "12px", backgroundColor: "#2196F3", opacity: 0.3, marginRight: "8px", border: "1px dashed #2196F3" }}></div>
             <span>Human Distance (click corridor)</span>
           </div>
