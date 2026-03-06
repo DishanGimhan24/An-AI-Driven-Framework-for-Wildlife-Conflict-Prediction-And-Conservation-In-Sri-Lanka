@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
-import Sidebar from "../components/Sidebar";
-import "./Dashboard.css";
+import HimashiSidebar from "./HimashiSidebar";
+import "./HimashiDashboard.css";
 
-export default function Dashboard() {
+export default function HimashiDashboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load CSV generated from ML (public/risk_map_data.csv)
   useEffect(() => {
     fetch("/risk_map_data.csv")
       .then((res) => res.text())
@@ -22,26 +21,29 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ---------- Helpers ----------
   const safeNum = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
   };
 
-  // ---------- KPI + Summary Calculations ----------
   const summary = useMemo(() => {
     const total = rows.length;
 
     const highCount = rows.filter((r) => r.risk_level === "HIGH").length;
-    const medCount = rows.filter((r) => r.risk_level === "MEDIUM").length;
-    const lowCount = rows.filter((r) => r.risk_level === "LOW").length;
+    const medCount  = rows.filter((r) => r.risk_level === "MEDIUM").length;
+    const lowCount  = rows.filter((r) => r.risk_level === "LOW").length;
 
-    // Vehicle type breakdown (train vs road)
     const vehicleCounts = rows.reduce(
       (acc, r) => {
         const vt = (r.vehicle_type || "").toLowerCase();
         if (vt.includes("train") || vt.includes("rail")) acc.train += 1;
-        else if (vt.includes("road") || vt.includes("car") || vt.includes("bus") || vt.includes("van") || vt.includes("bike"))
+        else if (
+          vt.includes("road") ||
+          vt.includes("car") ||
+          vt.includes("bus") ||
+          vt.includes("van") ||
+          vt.includes("bike")
+        )
           acc.road += 1;
         else acc.other += 1;
         return acc;
@@ -49,11 +51,9 @@ export default function Dashboard() {
       { train: 0, road: 0, other: 0 }
     );
 
-    // District top 5 by HIGH risk count (if district column exists)
     const districtHigh = rows.reduce((acc, r) => {
       const d = (r.district || r.District || "").trim();
-      if (!d) return acc;
-      if (r.risk_level !== "HIGH") return acc;
+      if (!d || r.risk_level !== "HIGH") return acc;
       acc[d] = (acc[d] || 0) + 1;
       return acc;
     }, {});
@@ -63,7 +63,6 @@ export default function Dashboard() {
       .slice(0, 5)
       .map(([district, count]) => ({ district, count }));
 
-    // Cluster summary (unique clusters excluding -1)
     const clusterStats = rows.reduce(
       (acc, r) => {
         const cid = r.cluster_id;
@@ -91,10 +90,8 @@ export default function Dashboard() {
 
   return (
     <div className="dash">
-      {/* LEFT SIDEBAR */}
-      <Sidebar />
+      <HimashiSidebar />
 
-      {/* MAIN CONTENT */}
       <main className="dash__content">
         <div className="dash__header">
           <div>
@@ -103,24 +100,14 @@ export default function Dashboard() {
               Real-time summary from <b>risk_map_data.csv</b>
             </p>
           </div>
-
           <div className="dash__badge">
             {loading ? "Loading…" : `Loaded ${summary.total} records`}
           </div>
         </div>
 
-        {/* KPI CARDS */}
         <section className="dash__kpis">
-          <KpiCard
-            title="High Risk Points"
-            value={summary.highCount}
-            hint="Risk level = HIGH"
-          />
-          <KpiCard
-            title="Clusters Found"
-            value={summary.clusterCount}
-            hint="DBSCAN clusters (excluding -1)"
-          />
+          <KpiCard title="High Risk Points" value={summary.highCount} hint="Risk level = HIGH" />
+          <KpiCard title="Clusters Found" value={summary.clusterCount} hint="DBSCAN clusters (excluding -1)" />
           <KpiCard
             title="Max Risk Score"
             value={summary.maxRisk ? summary.maxRisk.toFixed(2) : "—"}
@@ -133,7 +120,6 @@ export default function Dashboard() {
           />
         </section>
 
-        {/* PANELS */}
         <section className="dash__grid">
           {/* Risk Level Breakdown */}
           <div className="panel">
@@ -141,7 +127,6 @@ export default function Dashboard() {
               <h3 className="panel__title">Risk Level Breakdown</h3>
               <span className="panel__meta">Counts</span>
             </div>
-
             <div className="breakdown">
               <div className="pill pill--high">
                 <span>HIGH</span>
@@ -156,7 +141,6 @@ export default function Dashboard() {
                 <b>{summary.lowCount}</b>
               </div>
             </div>
-
             <p className="panel__note">
               These numbers are computed directly from your ML output file.
             </p>
@@ -168,7 +152,6 @@ export default function Dashboard() {
               <h3 className="panel__title">Top Dangerous Districts</h3>
               <span className="panel__meta">HIGH risk only</span>
             </div>
-
             {summary.topDistricts.length === 0 ? (
               <div className="empty">
                 No district column found (or no HIGH records).
@@ -194,9 +177,8 @@ export default function Dashboard() {
                 </tbody>
               </table>
             )}
-
             <p className="panel__note">
-              Use this for “dangerous district” page / alerts.
+              Use this for "dangerous district" page / alerts.
             </p>
           </div>
 
@@ -206,13 +188,11 @@ export default function Dashboard() {
               <h3 className="panel__title">Vehicle Type Breakdown</h3>
               <span className="panel__meta">Train / Road / Other</span>
             </div>
-
             <div className="bars">
               <BarRow label="Train" value={summary.vehicleCounts.train} total={summary.total} />
-              <BarRow label="Road" value={summary.vehicleCounts.road} total={summary.total} />
+              <BarRow label="Road"  value={summary.vehicleCounts.road}  total={summary.total} />
               <BarRow label="Other" value={summary.vehicleCounts.other} total={summary.total} />
             </div>
-
             <p className="panel__note">
               If your dataset has mixed incidents, this helps show distribution.
             </p>
@@ -224,7 +204,6 @@ export default function Dashboard() {
               <h3 className="panel__title">Cluster Summary</h3>
               <span className="panel__meta">DBSCAN</span>
             </div>
-
             <div className="clusterBox">
               <div className="clusterBox__item">
                 <span>Total clusters</span>
@@ -239,7 +218,6 @@ export default function Dashboard() {
                 <b>{summary.total - summary.clusteredPoints}</b>
               </div>
             </div>
-
             <p className="panel__note">
               Clustered points are those with cluster_id ≠ -1.
             </p>
@@ -249,8 +227,6 @@ export default function Dashboard() {
     </div>
   );
 }
-
-/* ---------------- Components ---------------- */
 
 function KpiCard({ title, value, hint }) {
   return (

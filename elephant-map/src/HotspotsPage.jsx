@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { DISHAN_API } from "./apiConfig";
 
 const PAGE_SIZE = 20;
 
@@ -45,7 +46,7 @@ export default function HotspotsPage() {
   const [expanded, setExpanded]         = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/nodes")
+    axios.get(`${DISHAN_API}/nodes`)
       .then(r => {
         const enriched = r.data.map(n => ({ ...n, district: getDistrict(n.center_lat, n.center_lon) }));
         setNodes(enriched);

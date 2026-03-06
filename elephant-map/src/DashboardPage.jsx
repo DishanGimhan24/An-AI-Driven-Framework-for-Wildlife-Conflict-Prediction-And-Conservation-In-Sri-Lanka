@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { DISHAN_API } from "./apiConfig";
 
 const FEATURES = [
   {
@@ -47,6 +48,42 @@ const FEATURES = [
     color: "#E65100",
     bgColor: "#FFF3E0",
     border: "#FFCC80",
+  },
+  {
+    path: "/risk-dashboard",
+    icon: "📊",
+    title: "Risk Analytics Dashboard",
+    desc: "CSV-driven KPI board showing high/medium/low risk point counts, cluster stats, vehicle type breakdown, and top dangerous districts from ML output data.",
+    color: "#1B5E20",
+    bgColor: "#E8F5E9",
+    border: "#A5D6A7",
+  },
+  {
+    path: "/risk-map",
+    icon: "🗾",
+    title: "Collision Risk Map",
+    desc: "Interactive map of all wildlife-vehicle collision incidents loaded from CSV. Filter by vehicle type, risk level, and toggle DBSCAN cluster centers. Switch between normal, satellite, and dark basemaps.",
+    color: "#4A148C",
+    bgColor: "#F3E5F5",
+    border: "#CE93D8",
+  },
+  {
+    path: "/risk-prediction",
+    icon: "🧮",
+    title: "District Risk Predictor",
+    desc: "Select a district and enter environmental parameters (rainfall, NDVI, water/forest distances) to get an AI-predicted wildlife collision risk score and level.",
+    color: "#01579B",
+    bgColor: "#E1F5FE",
+    border: "#81D4FA",
+  },
+  {
+    path: "/avc-home",
+    icon: "🌿",
+    title: "AVC Platform Home",
+    desc: "Overview of the AI-Smart Animal Vehicle Collision Predictor platform — mission, stats, and feature highlights for the Sri Lanka wildlife safety initiative.",
+    color: "#2E7D32",
+    bgColor: "#F1F8E9",
+    border: "#C5E1A5",
   },
 ];
 
@@ -95,8 +132,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      axios.get("http://localhost:8000/health"),
-      axios.get("http://localhost:8000/road-crossings/summary"),
+      axios.get(`${DISHAN_API}/health`),
+      axios.get(`${DISHAN_API}/road-crossings/summary`),
     ])
       .then(([healthRes, summaryRes]) => {
         setStats(healthRes.data);

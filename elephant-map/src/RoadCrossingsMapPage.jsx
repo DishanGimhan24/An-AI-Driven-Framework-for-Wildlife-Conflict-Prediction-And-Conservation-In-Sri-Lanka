@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap, useMapE
 import axios from "axios";
 import "leaflet/dist/leaflet.css";
 
-const API = "http://localhost:8000";
+import { DISHAN_API as API } from "./apiConfig";
+// Re-exported as API for local use
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 
 // ── Haversine distance in km ──────────────────────────────────────────────────

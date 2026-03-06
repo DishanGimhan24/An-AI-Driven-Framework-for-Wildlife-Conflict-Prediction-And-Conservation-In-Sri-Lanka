@@ -1,14 +1,12 @@
-/* Page background – softer */
 .prediction-page {
   min-height: 100vh;
-  background: #eef2f5; /* less white */
+  background: #eef2f5;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding-top: 50px;
 }
 
-/* Card – more emphasis */
 .prediction-card {
   background: #ffffff;
   width: 420px;
@@ -18,14 +16,12 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-/* Title */
-.title {
+.prediction-card .pred-title {
   margin-bottom: 22px;
   color: #0f172a;
   font-size: 22px;
 }
 
-/* Labels */
 .prediction-card label {
   display: block;
   margin-top: 14px;
@@ -34,7 +30,6 @@
   color: #334155;
 }
 
-/* Inputs – lighter & cleaner */
 .prediction-card input,
 .prediction-card select {
   width: 100%;
@@ -45,6 +40,7 @@
   font-size: 14px;
   background: #f8fafc;
   color: #0f172a;
+  box-sizing: border-box;
 }
 
 .prediction-card input:focus,
@@ -54,14 +50,12 @@
   background: #ffffff;
 }
 
-/* NDVI value text */
 .ndvi-value {
   font-size: 12px;
   color: #475569;
   margin-top: 4px;
 }
 
-/* Button – standout */
 .prediction-card button {
   width: 100%;
   margin-top: 26px;
@@ -79,8 +73,7 @@
   opacity: 0.95;
 }
 
-/* Result box – separated */
-.result {
+.pred-result {
   margin-top: 22px;
   padding: 14px;
   border-radius: 10px;
@@ -88,26 +81,26 @@
   border: 1.5px solid transparent;
 }
 
-.result.high {
+.pred-result.high {
   background: #fee2e2;
   color: #991b1b;
   border-color: #fecaca;
 }
 
-.result.medium {
+.pred-result.medium {
   background: #fef3c7;
   color: #92400e;
   border-color: #fde68a;
 }
 
-.result.low {
+.pred-result.low {
   background: #dcfce7;
   color: #166534;
   border-color: #bbf7d0;
 }
 
-.result.warning {
-  background: #e0f2fe;
-  color: #075985;
-  border-color: #bae6fd;
+.pred-result.warning {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
 }

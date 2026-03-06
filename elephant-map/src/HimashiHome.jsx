@@ -1,6 +1,6 @@
-import "./Home.css";
+import "./HimashiHome.css";
 
-function Home() {
+export default function HimashiHome() {
   return (
     <div className="home">
       <h1 className="home__title">
@@ -46,21 +46,19 @@ function Home() {
 
 function StatCard({ icon, number, text }) {
   return (
-    <div className="stat">
-      <div className="stat__icon">{icon}</div>
-      <h3 className="stat__number">{number}</h3>
-      <p className="stat__text">{text}</p>
+    <div className="hm-stat">
+      <div className="hm-stat__icon">{icon}</div>
+      <h3 className="hm-stat__number">{number}</h3>
+      <p className="hm-stat__text">{text}</p>
     </div>
   );
 }
 
 function FeatureCard({ title, text }) {
   return (
-    <div className="card">
-      <h3 className="card__title">{title}</h3>
-      <p className="card__text">{text}</p>
+    <div className="hm-card">
+      <h3 className="hm-card__title">{title}</h3>
+      <p className="hm-card__text">{text}</p>
     </div>
   );
 }
-
-export default Home;

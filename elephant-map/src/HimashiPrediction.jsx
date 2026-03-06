@@ -1,7 +1,19 @@
 import { useState } from "react";
-import "./Prediction.css";
+import "./HimashiPrediction.css";
+import { HIMASHI_API } from "./apiConfig";
 
-export default function Prediction() {
+const elephantDistricts = [
+  "Anuradhapura",
+  "Polonnaruwa",
+  "Mullativu",
+  "Monaragala",
+  "Hambantota",
+  "Vavuniyawa",
+  "Ampara",
+  "Badulla",
+];
+
+export default function HimashiPrediction() {
   const [district, setDistrict] = useState("");
   const [result, setResult] = useState(null);
 
@@ -9,56 +21,44 @@ export default function Prediction() {
     rain: 50,
     NDVI: 0.5,
     water_distance: 1000,
-    distance_to_forest: 800
+    distance_to_forest: 800,
   });
-
-  // Known elephant areas
-  const elephantDistricts = [
-    "Anuradhapura",
-    "Polonnaruwa",
-    "Mullativu",
-    "Monaragala",
-    "Hambantota",
-    "Vavuniyawa",
-    "Ampara",
-    "Badulla"
-  ];
 
   const handlePredict = async () => {
     if (!elephantDistricts.includes(district)) {
       setResult({
-        message: "Outside known elephant zones – risk estimation not applicable"
+        message: "Outside known elephant zones – risk estimation not applicable",
       });
       return;
     }
 
-    const res = await fetch("http://127.0.0.1:8000/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rain: Number(form.rain),
-        NDVI: Number(form.NDVI),
-        water_distance: Number(form.water_distance),
-        distance_to_forest: Number(form.distance_to_forest),
-        animal_type: 1,
-        vehicle_type: 1
-      })
-    });
-
-    const data = await res.json();
-    setResult(data);
+    try {
+      const res = await fetch(`${HIMASHI_API}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rain: Number(form.rain),
+          NDVI: Number(form.NDVI),
+          water_distance: Number(form.water_distance),
+          distance_to_forest: Number(form.distance_to_forest),
+          animal_type: 1,
+          vehicle_type: 1,
+        }),
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch {
+      setResult({ message: "API unavailable – start the backend server." });
+    }
   };
 
   return (
     <div className="prediction-page">
       <div className="prediction-card">
-        <h2 className="title">Risk Prediction</h2>
+        <h2 className="pred-title">Risk Prediction</h2>
 
         <label>District</label>
-        <select
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-        >
+        <select value={district} onChange={(e) => setDistrict(e.target.value)}>
           <option value="">Select district</option>
           <option>Galle</option>
           <option>Colombo</option>
@@ -91,9 +91,7 @@ export default function Prediction() {
         <input
           type="number"
           value={form.water_distance}
-          onChange={(e) =>
-            setForm({ ...form, water_distance: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, water_distance: e.target.value })}
         />
 
         <label>Distance to Forest (m)</label>
@@ -111,8 +109,8 @@ export default function Prediction() {
           <div
             className={
               result.message
-                ? "result warning"
-                : `result ${result.risk_level?.toLowerCase()}`
+                ? "pred-result warning"
+                : `pred-result ${result.risk_level?.toLowerCase()}`
             }
           >
             {result.message ? (

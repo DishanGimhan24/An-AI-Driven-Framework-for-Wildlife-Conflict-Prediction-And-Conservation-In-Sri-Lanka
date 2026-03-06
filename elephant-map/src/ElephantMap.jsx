@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Circle, Marker, Popup, Polyline, Polygon, useMapEvents } from "react-leaflet";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { DISHAN_API } from "./apiConfig";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -148,7 +149,7 @@ export default function ElephantMap() {
     setLoading(true);
     
     // Fetch nodes
-    axios.get("http://localhost:8000/nodes")
+    axios.get(`${DISHAN_API}/nodes`)
       .then((response) => {
         console.log("Fetched nodes:", response.data);
         const nodesWithDistricts = response.data.map(node => ({
@@ -172,7 +173,7 @@ export default function ElephantMap() {
       });
     
     // Fetch corridors
-    axios.get("http://localhost:8000/corridors")
+    axios.get(`${DISHAN_API}/corridors`)
       .then((response) => {
         console.log("Fetched corridors:", response.data);
         setCorridors(response.data);
@@ -274,7 +275,7 @@ export default function ElephantMap() {
           <h3 style={{ margin: "0 0 10px 0" }}>API Connection Error</h3>
           <p style={{ margin: 0 }}>{error}</p>
           <p style={{ margin: "10px 0 0 0", fontSize: "12px" }}>
-            Make sure the API server is running on http://localhost:8000
+            Make sure the API server is running on {DISHAN_API}
           </p>
         </div>
       )}

@@ -1,7 +1,7 @@
-import "./Sidebar.css";
+import "./HimashiSidebar.css";
 import { NavLink } from "react-router-dom";
 
-export default function Sidebar() {
+export default function HimashiSidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar__user">
@@ -20,7 +20,7 @@ export default function Sidebar() {
 
       <nav className="sidebar__nav">
         <NavLink
-          to="/dashboard"
+          to="/risk-dashboard"
           className={({ isActive }) =>
             "sidebar__link" + (isActive ? " active" : "")
           }
@@ -28,9 +28,8 @@ export default function Sidebar() {
           Overview
         </NavLink>
 
-        {/* ✅ මෙන්න Risk Map click කරාම /map යනවා */}
         <NavLink
-          to="/map"
+          to="/risk-map"
           className={({ isActive }) =>
             "sidebar__link" + (isActive ? " active" : "")
           }
@@ -39,7 +38,7 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/prediction"
+          to="/risk-prediction"
           className={({ isActive }) =>
             "sidebar__link" + (isActive ? " active" : "")
           }

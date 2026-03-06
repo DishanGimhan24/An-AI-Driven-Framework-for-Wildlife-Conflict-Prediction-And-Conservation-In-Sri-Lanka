@@ -8,7 +8,7 @@ import {
 import Papa from "papaparse";
 import { useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import "./RiskMap.css";
+import "./HimashiRiskMap.css";
 
 function norm(str) {
   return String(str ?? "").trim().toLowerCase();
@@ -16,13 +16,12 @@ function norm(str) {
 
 function getColor(level) {
   const L = norm(level);
-  if (L === "high") return "#ef4444"; // red
-  if (L === "medium") return "#f59e0b"; // orange
-  return "#22c55e"; // green
+  if (L === "high") return "#ef4444";
+  if (L === "medium") return "#f59e0b";
+  return "#22c55e";
 }
 
 function getVehicleType(p) {
-  // Accept common variants
   const v = norm(p.vehicle_type ?? p.vehicle ?? p.transport ?? p.mode);
   if (v.includes("train") || v.includes("rail")) return "TRAIN";
   if (v.includes("road") || v.includes("vehicle") || v.includes("car")) return "ROAD";
@@ -30,21 +29,19 @@ function getVehicleType(p) {
 }
 
 function getDistrict(p) {
-  return String(p.district ?? p.District ?? p.admin_district ?? p.location_district ?? "")
-    .trim();
+  return String(
+    p.district ?? p.District ?? p.admin_district ?? p.location_district ?? ""
+  ).trim();
 }
 
-export default function RiskMap() {
+export default function HimashiRiskMap() {
   const [points, setPoints] = useState([]);
   const [basemap, setBasemap] = useState("normal");
-
-  // Filters
   const [showTrain, setShowTrain] = useState(true);
   const [showRoad, setShowRoad] = useState(true);
   const [showClusters, setShowClusters] = useState(true);
   const [onlyHigh, setOnlyHigh] = useState(false);
 
-  // Load CSV
   useEffect(() => {
     fetch("/risk_map_data.csv")
       .then((res) => res.text())
@@ -55,7 +52,6 @@ export default function RiskMap() {
       .catch((err) => console.error("CSV load error", err));
   }, []);
 
-  // Basemaps
   const baseLayers = {
     normal: {
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -71,7 +67,6 @@ export default function RiskMap() {
     },
   };
 
-  // Filtered points
   const filteredPoints = useMemo(() => {
     return points.filter((p) => {
       const lat = Number(p.latitude ?? p.lat);
@@ -85,7 +80,6 @@ export default function RiskMap() {
 
       if (onlyHigh) {
         const rl = norm(p.risk_level);
-        // If risk_level missing, approximate from score
         const score = Number(p.risk_score);
         const isHigh = rl === "high" || (!Number.isNaN(score) && score >= 0.7);
         if (!isHigh) return false;
@@ -95,7 +89,6 @@ export default function RiskMap() {
     });
   }, [points, showTrain, showRoad, onlyHigh]);
 
-  // Cluster centers (from filtered points)
   const clusterCenters = useMemo(() => {
     const clusters = {};
 
@@ -131,7 +124,6 @@ export default function RiskMap() {
     }));
   }, [filteredPoints]);
 
-  // Top 5 dangerous districts (based on HIGH count; fallback: all count)
   const topDistricts = useMemo(() => {
     const map = new Map();
 
@@ -140,14 +132,9 @@ export default function RiskMap() {
       const rl = norm(p.risk_level);
       const score = Number(p.risk_score);
       const isHigh = rl === "high" || (!Number.isNaN(score) && score >= 0.7);
-
-      // "dangerous" metric = high count
-      const inc = isHigh ? 1 : 0;
-
-      map.set(d, (map.get(d) ?? 0) + inc);
+      map.set(d, (map.get(d) ?? 0) + (isHigh ? 1 : 0));
     });
 
-    // If all became 0 (no risk_level / score), fallback to total count per district
     const allZero = Array.from(map.values()).every((v) => v === 0);
     if (allZero) {
       map.clear();
@@ -162,7 +149,6 @@ export default function RiskMap() {
       .slice(0, 5);
   }, [filteredPoints]);
 
-  // Quick counters
   const counts = useMemo(() => {
     let train = 0, road = 0;
     filteredPoints.forEach((p) => {
@@ -175,12 +161,12 @@ export default function RiskMap() {
 
   return (
     <div className="rm-page">
-      {/* ===== Control Panel ===== */}
+      {/* Control Panel */}
       <div className="rm-panel">
         <div className="rm-panel__title">
           <div>
             <div className="rm-h">Risk Map Controls</div>
-            <div className="rm-sub">Filter incidents & switch basemap</div>
+            <div className="rm-sub">Filter incidents &amp; switch basemap</div>
           </div>
           <div className="rm-badge">{counts.total} points</div>
         </div>
@@ -202,47 +188,23 @@ export default function RiskMap() {
           </div>
         </div>
 
-        {/* Vehicle type filters */}
+        {/* Filters */}
         <div className="rm-section">
           <div className="rm-label">Vehicle Type</div>
-
           <label className="rm-check">
-            <input
-              type="checkbox"
-              checked={showTrain}
-              onChange={(e) => setShowTrain(e.target.checked)}
-            />
-            <span className="rm-check__text">
-              Train <span className="rm-mini">({counts.train})</span>
-            </span>
+            <input type="checkbox" checked={showTrain} onChange={(e) => setShowTrain(e.target.checked)} />
+            <span className="rm-check__text">Train <span className="rm-mini">({counts.train})</span></span>
           </label>
-
           <label className="rm-check">
-            <input
-              type="checkbox"
-              checked={showRoad}
-              onChange={(e) => setShowRoad(e.target.checked)}
-            />
-            <span className="rm-check__text">
-              Road <span className="rm-mini">({counts.road})</span>
-            </span>
+            <input type="checkbox" checked={showRoad} onChange={(e) => setShowRoad(e.target.checked)} />
+            <span className="rm-check__text">Road <span className="rm-mini">({counts.road})</span></span>
           </label>
-
           <label className="rm-check">
-            <input
-              type="checkbox"
-              checked={onlyHigh}
-              onChange={(e) => setOnlyHigh(e.target.checked)}
-            />
+            <input type="checkbox" checked={onlyHigh} onChange={(e) => setOnlyHigh(e.target.checked)} />
             <span className="rm-check__text">Only High Risk</span>
           </label>
-
           <label className="rm-check">
-            <input
-              type="checkbox"
-              checked={showClusters}
-              onChange={(e) => setShowClusters(e.target.checked)}
-            />
+            <input type="checkbox" checked={showClusters} onChange={(e) => setShowClusters(e.target.checked)} />
             <span className="rm-check__text">Show Cluster Centers</span>
           </label>
         </div>
@@ -251,18 +213,10 @@ export default function RiskMap() {
         <div className="rm-section">
           <div className="rm-label">Legend</div>
           <div className="rm-legend">
-            <div className="rm-legend__row">
-              <span className="rm-dot is-high" /> High Risk
-            </div>
-            <div className="rm-legend__row">
-              <span className="rm-dot is-med" /> Medium Risk
-            </div>
-            <div className="rm-legend__row">
-              <span className="rm-dot is-low" /> Low Risk
-            </div>
-            <div className="rm-legend__row">
-              <span className="rm-dot is-cluster" /> Cluster Center
-            </div>
+            <div className="rm-legend__row"><span className="rm-dot is-high" /> High Risk</div>
+            <div className="rm-legend__row"><span className="rm-dot is-med" /> Medium Risk</div>
+            <div className="rm-legend__row"><span className="rm-dot is-low" /> Low Risk</div>
+            <div className="rm-legend__row"><span className="rm-dot is-cluster" /> Cluster Center</div>
           </div>
         </div>
 
@@ -288,18 +242,13 @@ export default function RiskMap() {
         </div>
       </div>
 
-      {/* ===== Map ===== */}
-      <MapContainer
-        center={[7.8731, 80.7718]}
-        zoom={7}
-        className="rm-map"
-      >
+      {/* Map */}
+      <MapContainer center={[7.8731, 80.7718]} zoom={7} className="rm-map">
         <TileLayer
           url={baseLayers[basemap].url}
           attribution={baseLayers[basemap].attribution}
         />
 
-        {/* Points */}
         {filteredPoints.map((p, i) => {
           const lat = Number(p.latitude ?? p.lat);
           const lon = Number(p.longitude ?? p.lng ?? p.lon);
@@ -313,35 +262,22 @@ export default function RiskMap() {
               key={`pt-${i}`}
               center={[lat, lon]}
               radius={norm(p.risk_level) === "high" ? 7 : 5}
-              pathOptions={{
-                color: getColor(p.risk_level),
-                fillOpacity: 0.75,
-              }}
+              pathOptions={{ color: getColor(p.risk_level), fillOpacity: 0.75 }}
             >
-              {/* Hover */}
               <Tooltip direction="top" offset={[0, -6]} opacity={1}>
                 <div style={{ fontSize: 12 }}>
-                  <b>{vtLabel} Incident</b>
-                  <br />
-                  Lat: {lat.toFixed(5)} <br />
+                  <b>{vtLabel} Incident</b><br />
+                  Lat: {lat.toFixed(5)}<br />
                   Lon: {lon.toFixed(5)}
                 </div>
               </Tooltip>
-
-              {/* Click */}
               <Popup>
                 <div style={{ fontSize: 13 }}>
-                  <b>Vehicle:</b> {vtLabel}
-                  <br />
-                  <b>District:</b> {getDistrict(p) || "Unknown"}
-                  <br />
-                  <b>Risk Level:</b> {p.risk_level ?? "N/A"}
-                  <br />
+                  <b>Vehicle:</b> {vtLabel}<br />
+                  <b>District:</b> {getDistrict(p) || "Unknown"}<br />
+                  <b>Risk Level:</b> {p.risk_level ?? "N/A"}<br />
                   <b>Risk Score:</b>{" "}
-                  {Number.isNaN(Number(p.risk_score))
-                    ? "N/A"
-                    : Number(p.risk_score).toFixed(2)}
-                  <br />
+                  {Number.isNaN(Number(p.risk_score)) ? "N/A" : Number(p.risk_score).toFixed(2)}<br />
                   <b>Cluster:</b> {String(p.cluster_id ?? "N/A")}
                 </div>
               </Popup>
@@ -349,25 +285,18 @@ export default function RiskMap() {
           );
         })}
 
-        {/* Cluster centers */}
         {showClusters &&
           clusterCenters.map((c) => (
             <CircleMarker
               key={`cluster-${c.cluster_id}`}
               center={[c.lat, c.lon]}
               radius={Math.min(28, 10 + c.count)}
-              pathOptions={{
-                color: "#7c3aed",
-                fillColor: "#7c3aed",
-                fillOpacity: 0.25,
-              }}
+              pathOptions={{ color: "#7c3aed", fillColor: "#7c3aed", fillOpacity: 0.25 }}
             >
               <Popup>
                 <div style={{ fontSize: 13 }}>
-                  <b>Cluster ID:</b> {c.cluster_id}
-                  <br />
-                  <b>Incidents:</b> {c.count}
-                  <br />
+                  <b>Cluster ID:</b> {c.cluster_id}<br />
+                  <b>Incidents:</b> {c.count}<br />
                   <b>Max Risk:</b> {c.maxRisk.toFixed(2)}
                 </div>
               </Popup>

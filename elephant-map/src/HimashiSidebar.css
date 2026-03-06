@@ -27,6 +27,15 @@
   opacity: 0.8;
 }
 
+.sidebar__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-right: 4px;
+}
+
 .sidebar__nav {
   display: flex;
   flex-direction: column;
@@ -34,6 +43,9 @@
 }
 
 .sidebar__link {
+  display: block;
+  color: white;
+  text-decoration: none;
   padding: 8px;
   border-radius: 8px;
   background: rgba(255,255,255,0.05);
@@ -43,6 +55,7 @@
 .sidebar__link:hover {
   background: rgba(34,197,94,0.2);
 }
+
 .sidebar__link.active {
   background: rgba(34, 197, 94, 0.25);
   border: 1px solid rgba(34, 197, 94, 0.4);

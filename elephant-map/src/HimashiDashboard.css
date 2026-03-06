@@ -1,8 +1,4 @@
-/* Page layout:
-   Top navbar already exists (height ~64px)
-   Sidebar is inside dash layout
-*/
-
+/* Page layout */
 .dash {
   display: flex;
   min-height: calc(100vh - 64px);
@@ -180,12 +176,12 @@
   text-align: left;
   font-size: 12px;
   opacity: 0.7;
-  padding: 10px 10px;
+  padding: 10px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .table tbody td {
-  padding: 10px 10px;
+  padding: 10px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   font-weight: 600;
   color: #0f172a;
@@ -198,100 +194,78 @@
 /* Empty state */
 .empty {
   padding: 14px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px dashed rgba(15, 23, 42, 0.12);
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .empty__hint {
   margin-top: 8px;
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
-/* Vehicle bars */
+/* Bar rows */
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .barRow__top {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .barRow__label {
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 700;
   color: #0f172a;
 }
 
 .barRow__val {
-  font-weight: 800;
-  opacity: 0.85;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b7a3c;
 }
 
 .barRow__pct {
+  font-weight: 500;
   opacity: 0.7;
-  font-weight: 700;
 }
 
 .barRow__track {
-  height: 12px;
-  background: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.07);
   border-radius: 999px;
+  height: 8px;
   overflow: hidden;
 }
 
 .barRow__fill {
   height: 100%;
-  background: linear-gradient(90deg, #0b7a3c, #22c55e);
+  background: #16a34a;
   border-radius: 999px;
+  transition: width 0.5s ease;
 }
 
 /* Cluster box */
 .clusterBox {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
 .clusterBox__item {
-  background: rgba(11, 122, 60, 0.08);
-  border: 1px solid rgba(11, 122, 60, 0.18);
-  border-radius: 14px;
-  padding: 12px;
-}
-
-.clusterBox__item span {
-  display: block;
-  font-size: 12px;
-  opacity: 0.8;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .clusterBox__item b {
-  display: block;
-  margin-top: 6px;
-  font-size: 20px;
   color: #0b7a3c;
-  font-weight: 1000;
-}
-
-/* Responsive */
-@media (max-width: 1100px) {
-  .dash__kpis {
-    grid-template-columns: repeat(2, minmax(210px, 1fr));
-  }
-  .dash__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 700px) {
-  .dash {
-    flex-direction: column;
-  }
+  font-size: 15px;
 }

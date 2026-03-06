@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { DISHAN_API } from "./apiConfig";
 
 const PAGE_SIZE = 20;
 
@@ -18,7 +19,7 @@ export default function CorridorsPage() {
   const [expanded, setExpanded]   = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/corridors")
+    axios.get(`${DISHAN_API}/corridors`)
       .then(r => { setCorridors(r.data); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);

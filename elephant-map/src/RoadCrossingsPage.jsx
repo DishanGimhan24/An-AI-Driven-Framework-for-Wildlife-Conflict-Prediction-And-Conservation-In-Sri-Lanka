@@ -3,6 +3,7 @@ import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { DISHAN_API } from "./apiConfig";
 
 const PAGE_SIZE = 25;
 
@@ -38,8 +39,8 @@ export default function RoadCrossingsPage() {
 
   useEffect(() => {
     Promise.all([
-      axios.get("http://localhost:8000/road-crossings"),
-      axios.get("http://localhost:8000/road-crossings/summary"),
+      axios.get(`${DISHAN_API}/road-crossings`),
+      axios.get(`${DISHAN_API}/road-crossings/summary`),
     ])
       .then(([rcRes, sumRes]) => {
         setCrossings(rcRes.data);
