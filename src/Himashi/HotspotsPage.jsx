@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { DISHAN_API } from "./apiConfig";
+import { DISHAN_API } from "../apiConfig";
 
 const PAGE_SIZE = 20;
 

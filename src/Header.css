@@ -1,0 +1,49 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #1a3c2e;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.app-header__brand {
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  margin-right: 12px;
+}
+
+.app-header__nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.app-header__nav a {
+  color: #cde8d8;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.app-header__nav a:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.app-header__nav a.active {
+  background: #2e7d52;
+  color: #fff;
+}

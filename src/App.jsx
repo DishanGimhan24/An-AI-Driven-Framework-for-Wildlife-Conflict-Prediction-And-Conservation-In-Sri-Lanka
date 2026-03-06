@@ -7,17 +7,17 @@ import Header               from './Header';
 // ── Elephant-map pages ───────────────────────
 import DashboardPage        from './DashboardPage';        // /
 import ElephantMap          from './ElephantMap';           // /map
-import HotspotsPage         from './HotspotsPage';          // /hotspots
+import HotspotsPage         from './Himashi/HotspotsPage';          // /hotspots
 import CorridorsPage        from './CorridorsPage';          // /corridors
 import RoadCrossingsPage    from './RoadCrossingsPage';      // /road-crossings
 import RoadCrossingsMapPage from './RoadCrossingsMapPage';   // /road-crossings-map
 import PredictPage          from './PredictPage';            // /predict
 
 // ── Himashi pages (merged from second branch) ─
-import HimashiHome          from './HimashiHome';            // /avc-home
-import HimashiDashboard     from './HimashiDashboard';       // /risk-dashboard
-import HimashiRiskMap       from './HimashiRiskMap';         // /risk-map
-import HimashiPrediction    from './HimashiPrediction';      // /risk-prediction
+import HimashiHome          from './Himashi/HimashiHome';            // /avc-home
+import HimashiDashboard     from './Himashi/HimashiDashboard';       // /risk-dashboard
+import HimashiRiskMap       from './Himashi/HimashiRiskMap';         // /risk-map
+import HimashiPrediction    from './Himashi/HimashiPrediction';      // /risk-prediction
 
 function App() {
   return (

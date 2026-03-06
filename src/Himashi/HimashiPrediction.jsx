@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./HimashiPrediction.css";
-import { HIMASHI_API } from "./apiConfig";
+import { HIMASHI_API } from "../apiConfig";
 
 const elephantDistricts = [
   "Anuradhapura",
