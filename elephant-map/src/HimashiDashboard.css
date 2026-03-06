@@ -1,0 +1,271 @@
+/* Page layout */
+.dash {
+  display: flex;
+  min-height: calc(100vh - 64px);
+  background: #f5f7fb;
+}
+
+.dash__content {
+  flex: 1;
+  padding: 18px;
+}
+
+.dash__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.dash__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.dash__subtitle {
+  margin: 6px 0 0;
+  opacity: 0.8;
+  font-size: 13px;
+}
+
+.dash__badge {
+  background: rgba(11, 122, 60, 0.12);
+  color: #0b7a3c;
+  border: 1px solid rgba(11, 122, 60, 0.25);
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* KPI Cards */
+.dash__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.kpi {
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+}
+
+.kpi__title {
+  font-weight: 900;
+  opacity: 0.85;
+}
+
+.kpi__value {
+  font-size: 30px;
+  font-weight: 1000;
+  margin-top: 10px;
+  color: #0b7a3c;
+  letter-spacing: -0.5px;
+}
+
+.kpi__hint {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Panels grid */
+.dash__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.panel {
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 1000;
+  color: #0f172a;
+}
+
+.panel__meta {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.panel__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Risk breakdown pills */
+.breakdown {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 900;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.pill span {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.pill b {
+  font-size: 18px;
+}
+
+.pill--high {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.20);
+  color: #b91c1c;
+}
+
+.pill--med {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.22);
+  color: #b45309;
+}
+
+.pill--low {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.22);
+  color: #0b7a3c;
+}
+
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 12px;
+  opacity: 0.7;
+  padding: 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.table tbody tr:hover {
+  background: rgba(11, 122, 60, 0.06);
+}
+
+/* Empty state */
+.empty {
+  padding: 14px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.empty__hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Bar rows */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barRow__top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.barRow__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.barRow__val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b7a3c;
+}
+
+.barRow__pct {
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.barRow__track {
+  background: rgba(15, 23, 42, 0.07);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.barRow__fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+/* Cluster box */
+.clusterBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clusterBox__item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clusterBox__item b {
+  color: #0b7a3c;
+  font-size: 15px;
+}
