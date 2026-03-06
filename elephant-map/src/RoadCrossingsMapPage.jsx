@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap, useMapEvents } from "react-leaflet";
 import axios from "axios";
 import "leaflet/dist/leaflet.css";
 
@@ -109,41 +109,67 @@ out geom;`;
 }
 
 const DANGER_CONFIG = {
-  High:   { color: "#d32f2f", fill: "#ef5350", radius: 9  },
-  Medium: { color: "#e65100", fill: "#ff7043", radius: 7  },
-  Low:    { color: "#f9a825", fill: "#ffca28", radius: 5  },
+  High:   { color: "#d32f2f", weight: 5, opacity: 0.95 },
+  Medium: { color: "#e65100", weight: 4, opacity: 0.85 },
+  Low:    { color: "#f9a825", weight: 3, opacity: 0.75 },
 };
 
-const ROAD_TYPES = ["All", "Primary", "Secondary", "Tertiary", "Track", "Unclassified", "Other"];
-const SEASONS    = ["All", "Dry", "Wet", "Northeast Monsoon", "Southwest Monsoon"];
+const ROAD_TYPES = ["All", "Major Road", "Minor Road", "Secondary Road", "Other"];
+const SEASONS    = ["All", "Dry", "Wet", "Northeast Monsoon", "Southwest Monsoon", "Unknown"];
 const TIMES      = ["All", "Morning", "Afternoon", "Evening", "Night"];
 
-function FitBounds({ crossings }) {
+// ── Derive corridor's max danger level from its road crossings ────────────────
+function getCorridorDanger(corridor) {
+  const crossings = corridor.road_crossings || [];
+  if (!crossings.length) return "Low";
+  const rank = { High: 3, Medium: 2, Low: 1 };
+  return crossings.reduce(
+    (best, c) => (rank[c.danger_level] || 0) > (rank[best] || 0) ? c.danger_level : best,
+    "Low"
+  );
+}
+
+// ── Convert corridor path [{lat,lon}] to Leaflet [[lat,lon]] ─────────────────
+function pathToLatLngs(path) {
+  return (path || []).map(p => [p.lat, p.lon]);
+}
+
+// ── Find the most dangerous crossing in a corridor ────────────────────────────
+function topCrossing(corridor) {
+  const crossings = corridor.road_crossings || [];
+  if (!crossings.length) return null;
+  return crossings.reduce((best, c) =>
+    (c.danger_score || 0) > (best.danger_score || 0) ? c : best
+  , crossings[0]);
+}
+
+function FitBounds({ corridors }) {
   const map = useMap();
   const fitted = useRef(false);
   useEffect(() => {
-    const valid = crossings.filter(c => c.crossing_lat != null && c.crossing_lon != null);
-    if (!fitted.current && valid.length > 0) {
-      const lats = valid.map(c => c.crossing_lat);
-      const lngs = valid.map(c => c.crossing_lon);
+    if (!fitted.current && corridors.length > 0) {
+      const allPts = corridors.flatMap(c => pathToLatLngs(c.path));
+      if (allPts.length === 0) return;
+      const lats = allPts.map(p => p[0]);
+      const lngs = allPts.map(p => p[1]);
       map.fitBounds([
         [Math.min(...lats), Math.min(...lngs)],
         [Math.max(...lats), Math.max(...lngs)],
       ], { padding: [40, 40] });
       fitted.current = true;
     }
-  }, [crossings, map]);
+  }, [corridors, map]);
   return null;
 }
 
 export default function RoadCrossingsMapPage() {
-  const [crossings,     setCrossings]     = useState([]);
+  const [corridors,     setCorridors]     = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
   const [showPanel,     setShowPanel]     = useState(true);
   const [osmRoads,      setOsmRoads]      = useState([]);
   const [roadFetching,  setRoadFetching]  = useState(false);
-  const [selectedId,    setSelectedId]    = useState(null);  // clicked crossing
+  const [selectedId,    setSelectedId]    = useState(null);
 
   // Filters
   const [dangers,       setDangers]       = useState({ High: true, Medium: true, Low: true });
@@ -154,23 +180,46 @@ export default function RoadCrossingsMapPage() {
   const [minNight,      setMinNight]      = useState(0);
 
   useEffect(() => {
-    axios.get(`${API}/road-crossings`)
-      .then(r => { setCrossings(r.data); setLoading(false); })
+    axios.get(`${API}/corridors`)
+      .then(r => {
+        // Keep only corridors that actually cross a road
+        const withRoads = r.data.filter(c => (c.road_crossings || []).length > 0);
+        setCorridors(withRoads);
+        setLoading(false);
+      })
       .catch(() => { setError("Cannot reach API — start the backend."); setLoading(false); });
   }, []);
 
-  const filtered = crossings.filter(c => {
-    if (!dangers[c.danger_level])                                          return false;
-    if (roadType    !== "All" && c.road_type    !== roadType)              return false;
-    if (peakSeason  !== "All" && c.peak_season  !== peakSeason)           return false;
-    if (peakTime    !== "All" && c.peak_time_of_day !== peakTime)         return false;
-    if (c.crossing_count < minCrossings)                                   return false;
-    if ((c.night_ratio * 100) < minNight)                                  return false;
+  const filtered = corridors.filter(corridor => {
+    const dangerLvl = getCorridorDanger(corridor);
+    if (!dangers[dangerLvl]) return false;
+
+    const crossings = corridor.road_crossings || [];
+
+    // Road type: at least one crossing must match
+    if (roadType !== "All" && !crossings.some(c => c.road_type === roadType)) return false;
+
+    // Peak season: at least one crossing must match
+    if (peakSeason !== "All" && !crossings.some(c => c.peak_season === peakSeason)) return false;
+
+    // Peak time: at least one crossing must match
+    if (peakTime !== "All" && !crossings.some(c => c.peak_time_of_day === peakTime)) return false;
+
+    // Min crossing events: sum of all crossings on corridor
+    const totalCrossings = crossings.reduce((sum, c) => sum + (c.crossing_count || 0), 0);
+    if (totalCrossings < minCrossings) return false;
+
+    // Min night ratio: average night ratio across crossings
+    if (crossings.length > 0) {
+      const avgNight = crossings.reduce((s, c) => s + (c.night_ratio || 0), 0) / crossings.length;
+      if (avgNight * 100 < minNight) return false;
+    }
+
     return true;
   });
 
   const counts = { High: 0, Medium: 0, Low: 0 };
-  filtered.forEach(c => counts[c.danger_level]++);
+  filtered.forEach(c => counts[getCorridorDanger(c)]++);
 
   const toggleDanger = lvl => setDangers(d => ({ ...d, [lvl]: !d[lvl] }));
 
@@ -220,7 +269,7 @@ export default function RoadCrossingsMapPage() {
         display: "flex", gap: "16px", alignItems: "center", fontSize: "12px",
         border: "1px solid rgba(0,0,0,0.08)"
       }}>
-        <span style={{ fontWeight: "700", color: "#333" }}>Showing {filtered.length.toLocaleString()} crossings</span>
+        <span style={{ fontWeight: "700", color: "#333" }}>Showing {filtered.length.toLocaleString()} corridors</span>
         <span style={{ color: "#d32f2f", fontWeight: "600" }}>🔴 {counts.High} High</span>
         <span style={{ color: "#e65100", fontWeight: "600" }}>🟠 {counts.Medium} Med</span>
         <span style={{ color: "#f9a825", fontWeight: "600" }}>🟡 {counts.Low} Low</span>
@@ -245,7 +294,7 @@ export default function RoadCrossingsMapPage() {
       {showPanel && (
         <div style={panel}>
           <div style={panelHead}>
-            <span style={{ fontWeight: "700", fontSize: "13px" }}>🚗 Road Crossings Map</span>
+            <span style={{ fontWeight: "700", fontSize: "13px" }}>� Corridor-Road Overlaps</span>
             <button onClick={() => setShowPanel(false)} style={{
               background: "none", border: "none", color: "white",
               cursor: "pointer", fontSize: "18px", lineHeight: 1, padding: 0
@@ -346,31 +395,32 @@ export default function RoadCrossingsMapPage() {
         position: "absolute", bottom: "20px", left: "10px", zIndex: 1000,
         backgroundColor: "rgba(255,255,255,0.97)", borderRadius: "8px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.2)", padding: "10px 14px",
-        border: "1px solid rgba(0,0,0,0.08)", minWidth: "160px"
+        border: "1px solid rgba(0,0,0,0.08)", minWidth: "180px"
       }}>
         <div style={{ fontWeight: "700", fontSize: "12px", color: "#333", marginBottom: "8px" }}>
-          Danger Level
+          Corridor Danger Level
         </div>
         {Object.entries(DANGER_CONFIG).map(([lvl, cfg]) => (
           <div key={lvl} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
-            <svg width={cfg.radius * 2 + 2} height={cfg.radius * 2 + 2} style={{ flexShrink: 0 }}>
-              <circle cx={cfg.radius + 1} cy={cfg.radius + 1} r={cfg.radius}
-                fill={cfg.fill} stroke={cfg.color} strokeWidth="1.5" />
+            <svg width="28" height="10">
+              <line x1="0" y1="5" x2="28" y2="5" stroke={cfg.color} strokeWidth={cfg.weight} strokeLinecap="round" />
             </svg>
-            <span style={{ fontSize: "12px", color: "#444" }}>{lvl}</span>
+            <span style={{ fontSize: "12px", color: "#444" }}>{lvl} risk corridor</span>
           </div>
         ))}
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #eee",
                       fontSize: "10px", color: "#999" }}>
-          Click a crossing to show nearest road
+          Click a corridor to show matched road
         </div>
         <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
           <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#2196f3" strokeWidth="3" /></svg>
           <span style={{ fontSize: "11px", color: "#444" }}>Matched Road</span>
         </div>
         <div style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
-          <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#888" strokeWidth="1.5" strokeDasharray="3,3" /></svg>
-          <span style={{ fontSize: "11px", color: "#444" }}>Connector</span>
+          <svg width="12" height="12">
+            <circle cx="6" cy="6" r="5" fill="#1a237e" fillOpacity="0.7" />
+          </svg>
+          <span style={{ fontSize: "11px", color: "#444" }}>Crossing point</span>
         </div>
       </div>
 
@@ -388,133 +438,135 @@ export default function RoadCrossingsMapPage() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; OpenStreetMap contributors'
         />
-        <FitBounds crossings={filtered} />
+        <FitBounds corridors={filtered} />
         <RoadFetcher onRoads={setOsmRoads} onFetching={setRoadFetching} />
 
-        {filtered.map((c, i) => {
-          const cfg  = DANGER_CONFIG[c.danger_level] || DANGER_CONFIG.Low;
-          const lat  = c.crossing_lat;
-          const lng  = c.crossing_lon;
-          if (!lat || !lng) return null;
+        {filtered.map((corridor) => {
+          const dangerLvl  = getCorridorDanger(corridor);
+          const cfg        = DANGER_CONFIG[dangerLvl] || DANGER_CONFIG.Low;
+          const positions  = pathToLatLngs(corridor.path);
+          const isSelected = selectedId === corridor.corridor_id;
+          const top        = topCrossing(corridor);
 
-          const crossingKey = c.crossing_id ?? i;
-          const isSelected = selectedId === crossingKey;
-
-          // Find nearest road only for selected crossing
-          const match = isSelected && osmRoads.length > 0
-            ? findNearestRoad(lat, lng, osmRoads)
+          // Find nearest OSM road to the top crossing point when selected
+          const match = isSelected && top && osmRoads.length > 0
+            ? findNearestRoad(top.crossing_lat, top.crossing_lon, osmRoads)
             : null;
 
           return (
-            <React.Fragment key={crossingKey}>
-              {/* Highlighted road — only for selected */}
+            <React.Fragment key={corridor.corridor_id}>
+              {/* Highlighted matched road */}
               {isSelected && match && (
                 <Polyline
                   positions={match.road.coords}
-                  pathOptions={{
-                    color: "#2196f3",
-                    weight: 5,
-                    opacity: 0.85,
-                  }}
+                  pathOptions={{ color: "#2196f3", weight: 6, opacity: 0.9 }}
                 >
                   <Popup maxWidth={200}>
                     <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "12px" }}>
                       <strong>🛣️ {match.road.name || match.road.highway}</strong>
                       <div style={{ color: "#666", marginTop: "4px" }}>OSM ID: {match.road.id}</div>
+                      <div style={{ color: "#666" }}>Type: {match.road.highway}</div>
                     </div>
                   </Popup>
                 </Polyline>
               )}
 
-              {/* Dotted connector line from node to road — only for selected */}
-              {isSelected && match && match.closestPoint && (
-                <Polyline
-                  positions={[[lat, lng], match.closestPoint]}
+              {/* Crossing point markers for selected corridor */}
+              {isSelected && (corridor.road_crossings || []).map((cr, ci) => (
+                <CircleMarker
+                  key={ci}
+                  center={[cr.crossing_lat, cr.crossing_lon]}
+                  radius={6}
                   pathOptions={{
-                    color: "#555",
+                    color: "#1a237e",
+                    fillColor: "#3f51b5",
+                    fillOpacity: 0.8,
                     weight: 2,
-                    dashArray: "5,5",
-                    opacity: 0.7,
                   }}
-                />
-              )}
+                >
+                  <Popup maxWidth={220}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "12px", lineHeight: 1.5 }}>
+                      <strong>Road Crossing</strong>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 8px", marginTop: "6px" }}>
+                        <span style={{ color: "#888" }}>Road Type</span>
+                        <span>{cr.road_type ?? "—"}</span>
+                        <span style={{ color: "#888" }}>Events</span>
+                        <span style={{ fontWeight: "600" }}>{cr.crossing_count}</span>
+                        <span style={{ color: "#888" }}>Danger</span>
+                        <span style={{ fontWeight: "700", color: cfg.color }}>{cr.danger_level}</span>
+                        <span style={{ color: "#888" }}>Night</span>
+                        <span>🌙 {cr.night_ratio != null ? (cr.night_ratio * 100).toFixed(0) + "%" : "—"}</span>
+                        <span style={{ color: "#888" }}>Peak Time</span>
+                        <span>{cr.peak_time_of_day ?? "—"}</span>
+                      </div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              ))}
 
-              {/* Crossing point marker */}
-              <CircleMarker
-                center={[lat, lng]}
-                radius={isSelected ? cfg.radius + 3 : cfg.radius}
+              {/* Corridor polyline */}
+              <Polyline
+                positions={positions}
                 pathOptions={{
-                  color:       isSelected ? "#1a237e" : cfg.color,
-                  fillColor:   cfg.fill,
-                  fillOpacity: isSelected ? 1 : 0.85,
-                  weight:      isSelected ? 3 : 1.5,
+                  color:   isSelected ? "#1a237e" : cfg.color,
+                  weight:  isSelected ? cfg.weight + 2 : cfg.weight,
+                  opacity: isSelected ? 1 : cfg.opacity,
+                  dashArray: isSelected ? null : "8,4",
                 }}
                 eventHandlers={{
-                  click: () => setSelectedId(isSelected ? null : crossingKey),
+                  click: () => setSelectedId(isSelected ? null : corridor.corridor_id),
                 }}
               >
-              <Popup maxWidth={280}>
-                <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: 1.5 }}>
-                  {/* Title */}
-                  <div style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid #eee"
-                  }}>
-                    <strong style={{ fontSize: "13px", color: "#222" }}>
-                      Road Crossing {c.crossing_id != null
-                        ? `#${c.crossing_id}`
-                        : `@ ${lat.toFixed(4)}, ${lng.toFixed(4)}`}
-                    </strong>
-                    <span style={{
-                      padding: "2px 8px", borderRadius: "10px", fontSize: "11px",
-                      fontWeight: "700", color: "white",
-                      backgroundColor: cfg.color
-                    }}>{c.danger_level}</span>
+                <Popup maxWidth={300}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: 1.5 }}>
+                    <div style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid #eee"
+                    }}>
+                      <strong style={{ fontSize: "13px", color: "#222" }}>
+                        Corridor {corridor.corridor_id}
+                      </strong>
+                      <span style={{
+                        padding: "2px 8px", borderRadius: "10px", fontSize: "11px",
+                        fontWeight: "700", color: "white", backgroundColor: cfg.color
+                      }}>{dangerLvl}</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", fontSize: "12px" }}>
+                      <span style={{ color: "#888" }}>Node Path</span>
+                      <span>{corridor.from_node} → {corridor.to_node}</span>
+
+                      <span style={{ color: "#888" }}>Road Crossings</span>
+                      <span style={{ fontWeight: "600" }}>{(corridor.road_crossings || []).length}</span>
+
+                      <span style={{ color: "#888" }}>Total Events</span>
+                      <span style={{ fontWeight: "600" }}>
+                        {(corridor.road_crossings || []).reduce((s, c) => s + (c.crossing_count || 0), 0)}
+                      </span>
+
+                      <span style={{ color: "#888" }}>Length</span>
+                      <span>{corridor.distance_meters != null ? (corridor.distance_meters / 1000).toFixed(2) + " km" : "—"}</span>
+
+                      <span style={{ color: "#888" }}>Safety Score</span>
+                      <span style={{ fontWeight: "600", color: cfg.color }}>{corridor.safety_score?.toFixed(1) ?? "—"}</span>
+
+                      {top && (
+                        <>
+                          <span style={{ color: "#888" }}>Highest Risk Road</span>
+                          <span>{top.road_type ?? "—"}</span>
+                          <span style={{ color: "#888" }}>Peak Time</span>
+                          <span>{top.peak_time_of_day ?? "—"}</span>
+                          <span style={{ color: "#888" }}>Night Activity</span>
+                          <span>🌙 {top.night_ratio != null ? (top.night_ratio * 100).toFixed(0) + "%" : "—"}</span>
+                        </>
+                      )}
+                    </div>
+                    <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #eee",
+                                  fontSize: "10px", color: "#aaa" }}>
+                      Click to toggle selection
+                    </div>
                   </div>
-
-                  {/* Metrics grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", fontSize: "12px" }}>
-                    <span style={{ color: "#888" }}>Danger Score</span>
-                    <span style={{ fontWeight: "700", color: cfg.color }}>{c.danger_score?.toFixed(1) ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Corridor</span>
-                    <span>{c.corridor_id ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Crossing Events</span>
-                    <span style={{ fontWeight: "600" }}>{c.crossing_count?.toLocaleString() ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Elephants</span>
-                    <span>{c.elephant_count ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Night Activity</span>
-                    <span style={{ color: "#1a237e", fontWeight: "600" }}>
-                      🌙 {c.night_ratio != null ? (c.night_ratio * 100).toFixed(0) + "%" : "—"}
-                    </span>
-
-                    <span style={{ color: "#888" }}>Peak Hours</span>
-                    <span>{Array.isArray(c.peak_hours) ? c.peak_hours.join(", ") + "h" : "—"}</span>
-
-                    <span style={{ color: "#888" }}>Peak Season</span>
-                    <span>{c.peak_season ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Peak Time</span>
-                    <span>{c.peak_time_of_day ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Road Type</span>
-                    <span>{c.road_type ?? "—"}</span>
-
-                    <span style={{ color: "#888" }}>Traffic Exposure</span>
-                    <span>{c.traffic_exposure != null ? (c.traffic_exposure * 100).toFixed(0) + "%" : "—"}</span>
-                  </div>
-
-                  {/* Coordinates */}
-                  <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px solid #eee",
-                                fontSize: "10px", color: "#aaa" }}>
-                    {lat.toFixed(5)}, {lng.toFixed(5)}
-                  </div>
-                </div>
-              </Popup>
-              </CircleMarker>
+                </Popup>
+              </Polyline>
             </React.Fragment>
           );
         })}
