@@ -67,6 +67,8 @@ export default function HimashiRiskMap() {
     },
   };
 
+  //himashiiii
+
   const filteredPoints = useMemo(() => {
     return points.filter((p) => {
       const lat = Number(p.latitude ?? p.lat);
