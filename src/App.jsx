@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import './App.css';
+import './Components/Tharushi/src/index.css';
 
 // ── Core layout ──────────────────────────────
 import Header               from './Header';
@@ -18,6 +19,28 @@ import HimashiHome          from './Himashi/HimashiHome';            // /avc-hom
 import HimashiDashboard     from './Himashi/HimashiDashboard';       // /risk-dashboard
 import HimashiRiskMap       from './Himashi/HimashiRiskMap';         // /risk-map
 import HimashiPrediction    from './Himashi/HimashiPrediction';      // /risk-prediction
+
+// ── Tharushi (ELESAFE) pages ──────────────────
+import { AppProvider, useApp } from './Components/Tharushi/src/context/AppContext';
+import TharushiLogin        from './Components/Tharushi/src/pages/Login';          // /tharushi/login
+import TharushiDashboard    from './Components/Tharushi/src/pages/Dashboard';      // /tharushi/dashboard
+import TharushiPredict      from './Components/Tharushi/src/pages/RiskPrediction'; // /tharushi/predict
+import TharushiMapCalendar  from './Components/Tharushi/src/pages/MapCalendar';    // /tharushi/map-calendar
+import TharushiHistorical   from './Components/Tharushi/src/pages/Historical';     // /tharushi/historical
+
+function TharushiLayout() {
+  return <AppProvider><Outlet /></AppProvider>;
+}
+
+function TharushiProtected({ children }) {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? children : <Navigate to="/tharushi/login" replace />;
+}
+
+function TharushiPublic({ children }) {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? <Navigate to="/tharushi/dashboard" replace /> : children;
+}
 
 function App() {
   return (
@@ -39,6 +62,16 @@ function App() {
           <Route path="/risk-dashboard"     element={<HimashiDashboard />} />
           <Route path="/risk-map"           element={<HimashiRiskMap />} />
           <Route path="/risk-prediction"    element={<HimashiPrediction />} />
+
+          {/* ── Tharushi (ELESAFE) routes ── */}
+          <Route path="/tharushi" element={<TharushiLayout />}>
+            <Route index                element={<Navigate to="dashboard" replace />} />
+            <Route path="login"         element={<TharushiPublic><TharushiLogin /></TharushiPublic>} />
+            <Route path="dashboard"     element={<TharushiProtected><TharushiDashboard /></TharushiProtected>} />
+            <Route path="predict"       element={<TharushiProtected><TharushiPredict /></TharushiProtected>} />
+            <Route path="map-calendar"  element={<TharushiProtected><TharushiMapCalendar /></TharushiProtected>} />
+            <Route path="historical"    element={<TharushiProtected><TharushiHistorical /></TharushiProtected>} />
+          </Route>
         </Routes>
       </div>
     </Router>

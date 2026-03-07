@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL from environment variable
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -41,7 +41,7 @@ apiClient.interceptors.response.use(
       if (status === 401) {
         // Unauthorized - clear token and redirect to login
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        window.location.href = '/tharushi/login';
       }
       
       // Return error message from server

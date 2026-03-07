@@ -31,7 +31,7 @@ export default function Login() {
       
       if (response.status === 'success') {
         login(response.data.user);
-        navigate('/dashboard');
+        navigate('/tharushi/dashboard');
       } else {
         setError('Invalid credentials');
       }

@@ -1,4 +1,5 @@
-import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import './index.css';
 import { AppProvider, useApp } from './context/AppContext';
 import Dashboard from './pages/Dashboard';
 import Historical from './pages/Historical';
@@ -11,7 +12,7 @@ function ProtectedRoute({ children }) {
   const { isLoggedIn } = useApp();
   
   if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/tharushi/login" replace />;
   }
   
   return children;
@@ -22,7 +23,7 @@ function PublicRoute({ children }) {
   const { isLoggedIn } = useApp();
   
   if (isLoggedIn) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/tharushi/dashboard" replace />;
   }
   
   return children;
@@ -33,7 +34,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route
-        path="/login"
+        path="login"
         element={
           <PublicRoute>
             <Login />
@@ -43,7 +44,7 @@ function AppRoutes() {
 
       {/* Protected Routes */}
       <Route
-        path="/dashboard"
+        path="dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
@@ -52,7 +53,7 @@ function AppRoutes() {
       />
 
       <Route
-        path="/predict"
+        path="predict"
         element={
           <ProtectedRoute>
             <RiskPrediction />
@@ -61,7 +62,7 @@ function AppRoutes() {
       />
 
       <Route
-        path="/map-calendar"
+        path="map-calendar"
         element={
           <ProtectedRoute>
             <MapCalendar />
@@ -70,7 +71,7 @@ function AppRoutes() {
       />
 
       <Route
-        path="/historical"
+        path="historical"
         element={
           <ProtectedRoute>
             <Historical />
@@ -79,7 +80,7 @@ function AppRoutes() {
       />
 
       {/* Default Route */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="" element={<Navigate to="dashboard" replace />} />
 
       {/* 404 Not Found */}
       <Route path="*" element={<NotFound />} />
@@ -102,7 +103,7 @@ function NotFound() {
           The page you're looking for doesn't exist.
         </p>
         <a
-          href={isLoggedIn ? "/dashboard" : "/login"}
+          href={isLoggedIn ? "/tharushi/dashboard" : "/tharushi/login"}
           className="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
         >
           {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
@@ -114,11 +115,9 @@ function NotFound() {
 
 function App() {
   return (
-    <Router>
-      <AppProvider>
-        <AppRoutes />
-      </AppProvider>
-    </Router>
+    <AppProvider>
+      <AppRoutes />
+    </AppProvider>
   );
 }
 

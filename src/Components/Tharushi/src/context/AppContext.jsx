@@ -1,28 +1,15 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { getCurrentUser, isAuthenticated } from '../api/authAPI';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(() => getCurrentUser());
+  const [isLoggedIn, setIsLoggedIn] = useState(() => isAuthenticated());
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Check authentication on mount
-  useEffect(() => {
-    const checkAuth = () => {
-      const authenticated = isAuthenticated();
-      setIsLoggedIn(authenticated);
-      if (authenticated) {
-        const currentUser = getCurrentUser();
-        setUser(currentUser);
-      }
-    };
-    checkAuth();
-  }, []);
 
   // Login function
   const login = (userData) => {

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { logout } from '../../api/authAPI';
+import { logout } from '../api/authAPI';
 import { useApp } from '../../context/AppContext';
 
 export default function Navbar() {
@@ -10,10 +10,10 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     logoutContext();
-    navigate('/login');
+    navigate('/tharushi/login');
   };
 
-  if (location.pathname === '/login') {
+  if (location.pathname === '/tharushi/login') {
     return null;
   }
 
@@ -21,7 +21,7 @@ export default function Navbar() {
     <nav className="bg-primary shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to="/tharushi/dashboard" className="flex items-center gap-3">
             <div className="bg-white rounded-full p-2">
               <svg className="h-8 w-8 text-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
@@ -34,16 +34,16 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/dashboard" className="text-white hover:text-white/80 transition-colors">
+            <Link to="/tharushi/dashboard" className="text-white hover:text-white/80 transition-colors">
               Dashboard
             </Link>
-            <Link to="/predict" className="text-white hover:text-white/80 transition-colors">
+            <Link to="/tharushi/predict" className="text-white hover:text-white/80 transition-colors">
               Predict Risk
             </Link>
-            <Link to="/map-calendar" className="text-white hover:text-white/80 transition-colors">
-              Map & Calendar
+            <Link to="/tharushi/map-calendar" className="text-white hover:text-white/80 transition-colors">
+              Map &amp; Calendar
             </Link>
-            <Link to="/historical" className="text-white hover:text-white/80 transition-colors">
+            <Link to="/tharushi/historical" className="text-white hover:text-white/80 transition-colors">
               Historical Data
             </Link>
           </div>
@@ -63,16 +63,16 @@ export default function Navbar() {
 
         <div className="md:hidden pb-4">
           <div className="flex flex-col gap-2">
-            <Link to="/dashboard" className="text-white hover:text-white/80 transition-colors py-1">
+            <Link to="/tharushi/dashboard" className="text-white hover:text-white/80 transition-colors py-1">
               Dashboard
             </Link>
-            <Link to="/predict" className="text-white hover:text-white/80 transition-colors py-1">
+            <Link to="/tharushi/predict" className="text-white hover:text-white/80 transition-colors py-1">
               Predict Risk
             </Link>
-            <Link to="/map-calendar" className="text-white hover:text-white/80 transition-colors py-1">
-              Map & Calendar
+            <Link to="/tharushi/map-calendar" className="text-white hover:text-white/80 transition-colors py-1">
+              Map &amp; Calendar
             </Link>
-            <Link to="/historical" className="text-white hover:text-white/80 transition-colors py-1">
+            <Link to="/tharushi/historical" className="text-white hover:text-white/80 transition-colors py-1">
               Historical Data
             </Link>
           </div>

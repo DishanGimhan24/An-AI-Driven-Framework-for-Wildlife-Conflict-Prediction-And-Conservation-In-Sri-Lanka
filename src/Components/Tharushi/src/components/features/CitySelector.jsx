@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCitiesByDistrict } from '../../api/cityAPI';
+import { getCitiesByDistrict } from '../api/cityAPI';
 
 export default function CitySelector({ district, value, onChange, label = "Select City/Division", disabled = false }) {
     console.log('CitySelector props:', { district, value, disabled });
