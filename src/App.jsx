@@ -18,6 +18,10 @@ import HimashiHome          from './Himashi/HimashiHome';            // /avc-hom
 import HimashiDashboard     from './Himashi/HimashiDashboard';       // /risk-dashboard
 import HimashiRiskMap       from './Himashi/HimashiRiskMap';         // /risk-map
 import HimashiPrediction    from './Himashi/HimashiPrediction';      // /risk-prediction
+import HimashiDistrictDetails from './Himashi/HimashiDistrictDetails'; // /district/:district
+import HimashiTopDistricts    from './Himashi/HimashiTopDistricts';    // /top-districts
+import HimashiRiskSummary     from './Himashi/HimashiRiskSummary';     // /risk-summary
+import HimashiRiskLocations   from './Himashi/HimashiRiskLocations';   // /risk-locations
 
 function App() {
   return (
@@ -39,6 +43,10 @@ function App() {
           <Route path="/risk-dashboard"     element={<HimashiDashboard />} />
           <Route path="/risk-map"           element={<HimashiRiskMap />} />
           <Route path="/risk-prediction"    element={<HimashiPrediction />} />
+          <Route path="/district/:district" element={<HimashiDistrictDetails />} />
+          <Route path="/top-districts"     element={<HimashiTopDistricts />} />
+          <Route path="/risk-summary"       element={<HimashiRiskSummary />} />
+          <Route path="/risk-locations"     element={<HimashiRiskLocations />} />
         </Routes>
       </div>
     </Router>

@@ -10,6 +10,8 @@ import { useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import "./HimashiRiskMap.css";
 
+/** ─── Helpers ─────────────────────────────────────────── */
+
 function norm(str) {
   return String(str ?? "").trim().toLowerCase();
 }
@@ -21,11 +23,28 @@ function getColor(level) {
   return "#22c55e";
 }
 
+// Handles text labels AND numeric encoding: "1" = train, "0" = road
 function getVehicleType(p) {
-  const v = norm(p.vehicle_type ?? p.vehicle ?? p.transport ?? p.mode);
-  if (v.includes("train") || v.includes("rail")) return "TRAIN";
-  if (v.includes("road") || v.includes("vehicle") || v.includes("car")) return "ROAD";
+  const v = norm(p.vehicle_type ?? p.vehicle ?? p.transport ?? p.mode ?? "");
+  if (v === "1" || v.includes("train") || v.includes("rail")) return "TRAIN";
+  if (v === "0" || v.includes("road") || v.includes("vehicle") || v.includes("car")) return "ROAD";
   return "UNKNOWN";
+}
+
+// Tries several field name variants, then falls back to risk_score threshold
+function getRiskLevel(p) {
+  const raw = norm(
+    p.risk_level ?? p.Risk_Level ?? p.RiskLevel ?? p.RISK_LEVEL ?? ""
+  );
+  if (raw === "high" || raw === "medium" || raw === "low") return raw;
+  // Numeric fallback
+  const score = Number(p.risk_score ?? p.RiskScore ?? p.risk_score_norm ?? "");
+  if (!Number.isNaN(score)) {
+    if (score >= 0.7) return "high";
+    if (score >= 0.4) return "medium";
+    return "low";
+  }
+  return "low";
 }
 
 function getDistrict(p) {
@@ -43,13 +62,38 @@ export default function HimashiRiskMap() {
   const [onlyHigh, setOnlyHigh] = useState(false);
 
   useEffect(() => {
+    const parseAndStore = (text) => {
+      const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+      const rows = parsed.data ?? [];
+
+      // Deduplicate by lat+lon so overlapping points don't count twice on the map
+      const seen = new Set();
+      const unique = rows.filter((p) => {
+        const lat = Number(p.latitude ?? p.lat);
+        const lon = Number(p.longitude ?? p.lng ?? p.lon);
+        if (Number.isNaN(lat) || Number.isNaN(lon)) return false;
+        const key = `${lat.toFixed(5)}_${lon.toFixed(5)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      setPoints(unique);
+    };
+
     fetch("/risk_map_data.csv")
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        setPoints(parsed.data ?? []);
+      .then((res) => {
+        if (!res.ok) throw new Error("risk_map_data.csv not found");
+        return res.text();
       })
-      .catch((err) => console.error("CSV load error", err));
+      .then(parseAndStore)
+      .catch(() => {
+        // Fallback to main collision dataset
+        fetch("/collision.csv")
+          .then((res) => res.text())
+          .then(parseAndStore)
+          .catch((err) => console.error("CSV load error", err));
+      });
   }, []);
 
   const baseLayers = {
@@ -79,10 +123,7 @@ export default function HimashiRiskMap() {
       if (vt === "UNKNOWN" && !(showTrain || showRoad)) return false;
 
       if (onlyHigh) {
-        const rl = norm(p.risk_level);
-        const score = Number(p.risk_score);
-        const isHigh = rl === "high" || (!Number.isNaN(score) && score >= 0.7);
-        if (!isHigh) return false;
+        if (getRiskLevel(p) !== "high") return false;
       }
 
       return true;
@@ -129,9 +170,7 @@ export default function HimashiRiskMap() {
 
     filteredPoints.forEach((p) => {
       const d = getDistrict(p) || "Unknown";
-      const rl = norm(p.risk_level);
-      const score = Number(p.risk_score);
-      const isHigh = rl === "high" || (!Number.isNaN(score) && score >= 0.7);
+      const isHigh = getRiskLevel(p) === "high";
       map.set(d, (map.get(d) ?? 0) + (isHigh ? 1 : 0));
     });
 
@@ -150,13 +189,18 @@ export default function HimashiRiskMap() {
   }, [filteredPoints]);
 
   const counts = useMemo(() => {
-    let train = 0, road = 0;
+    let train = 0, road = 0, high = 0, medium = 0, low = 0;
     filteredPoints.forEach((p) => {
       const vt = getVehicleType(p);
       if (vt === "TRAIN") train += 1;
       else if (vt === "ROAD") road += 1;
+
+      const rl = getRiskLevel(p);
+      if (rl === "high") high += 1;
+      else if (rl === "medium") medium += 1;
+      else low += 1;
     });
-    return { total: filteredPoints.length, train, road };
+    return { total: filteredPoints.length, train, road, high, medium, low };
   }, [filteredPoints]);
 
   return (
@@ -185,6 +229,29 @@ export default function HimashiRiskMap() {
                 {t === "normal" ? "Normal" : t === "satellite" ? "Satellite" : "Dark"}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Risk Analysis */}
+        <div className="rm-section">
+          <div className="rm-label">Risk Analysis</div>
+          <div className="rm-stat-grid">
+            <div className="rm-stat-card is-high">
+              <div className="rm-stat-label">High Risk</div>
+              <div className="rm-stat-value">{counts.high}</div>
+            </div>
+            <div className="rm-stat-card is-med">
+              <div className="rm-stat-label">Medium</div>
+              <div className="rm-stat-value">{counts.medium}</div>
+            </div>
+            <div className="rm-stat-card is-low">
+              <div className="rm-stat-label">Low Risk</div>
+              <div className="rm-stat-value">{counts.low}</div>
+            </div>
+            <div className="rm-stat-card is-cluster">
+              <div className="rm-stat-label">Clusters</div>
+              <div className="rm-stat-value">{clusterCenters.length}</div>
+            </div>
           </div>
         </div>
 
@@ -256,17 +323,20 @@ export default function HimashiRiskMap() {
 
           const vt = getVehicleType(p);
           const vtLabel = vt === "TRAIN" ? "Train" : vt === "ROAD" ? "Road" : "Unknown";
+          const rl = getRiskLevel(p);
+          const animal = String(p.animal_type ?? p.Animal_Type ?? p.animal ?? "").trim() || "Unknown";
 
           return (
             <CircleMarker
               key={`pt-${i}`}
               center={[lat, lon]}
-              radius={norm(p.risk_level) === "high" ? 7 : 5}
-              pathOptions={{ color: getColor(p.risk_level), fillOpacity: 0.75 }}
+              radius={rl === "high" ? 8 : rl === "medium" ? 6 : 5}
+              pathOptions={{ color: getColor(rl), fillOpacity: 0.75 }}
             >
               <Tooltip direction="top" offset={[0, -6]} opacity={1}>
                 <div style={{ fontSize: 12 }}>
                   <b>{vtLabel} Incident</b><br />
+                  Risk: <b>{rl.toUpperCase()}</b><br />
                   Lat: {lat.toFixed(5)}<br />
                   Lon: {lon.toFixed(5)}
                 </div>
@@ -274,8 +344,9 @@ export default function HimashiRiskMap() {
               <Popup>
                 <div style={{ fontSize: 13 }}>
                   <b>Vehicle:</b> {vtLabel}<br />
+                  <b>Animal:</b> {animal}<br />
                   <b>District:</b> {getDistrict(p) || "Unknown"}<br />
-                  <b>Risk Level:</b> {p.risk_level ?? "N/A"}<br />
+                  <b>Risk Level:</b> {rl.charAt(0).toUpperCase() + rl.slice(1)}<br />
                   <b>Risk Score:</b>{" "}
                   {Number.isNaN(Number(p.risk_score)) ? "N/A" : Number(p.risk_score).toFixed(2)}<br />
                   <b>Cluster:</b> {String(p.cluster_id ?? "N/A")}

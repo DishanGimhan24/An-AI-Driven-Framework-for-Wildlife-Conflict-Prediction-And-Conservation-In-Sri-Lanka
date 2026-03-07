@@ -1,7 +1,8 @@
+/* Full-screen layout: left panel + map */
 .rm-page {
   position: relative;
   width: 100%;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 70px); /* adjust if your Navbar height different */
   display: grid;
   grid-template-columns: 340px 1fr;
   background: #f3f6fb;
@@ -145,6 +146,63 @@
 .rm-dot.is-low     { background: #22c55e; }
 .rm-dot.is-cluster { background: #7c3aed; }
 
+/* Stat cards */
+.rm-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.rm-stat-card {
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  color: white;
+  font-weight: 700;
+}
+
+.rm-stat-card.is-high {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #7f1d1d;
+}
+
+.rm-stat-card.is-med {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #78350f;
+}
+
+.rm-stat-card.is-low {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.rm-stat-card.is-cluster {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: #7c3aed;
+  color: #4c1d95;
+}
+
+.rm-stat-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.rm-stat-value {
+  font-size: 24px;
+  font-weight: 900;
+}
+
 .rm-table {
   display: grid;
   gap: 8px;
@@ -155,7 +213,7 @@
   grid-template-columns: 26px 1fr 40px;
   align-items: center;
   gap: 10px;
-  padding: 10px;
+  padding: 10px 10px;
   border-radius: 12px;
   background: #f8fafc;
   border: 1px solid rgba(0, 0, 0, 0.06);
