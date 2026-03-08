@@ -1,10 +1,33 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import 'leaflet/dist/leaflet.css';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  ResponsiveContainer, Cell, CartesianGrid,
+} from "recharts";
+import "leaflet/dist/leaflet.css";
 import Sidebar from "./HimashiSidebar";
 import "./HimashiDashboard.css";
+
+const DANGER_PALETTE = [
+  "#ef4444", "#f97316", "#fb923c", "#fbbf24",
+  "#facc15", "#f59e0b", "#fcd34d", "#fde68a",
+  "#fef08a", "#fef9c3",
+];
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="chart-tooltip">
+      <div style={{ fontWeight: 700, marginBottom: 4, color: "#e6edf3" }}>{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ color: p.fill || p.color, fontSize: 12 }}>
+          {p.name}: <strong>{p.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function TopDangerousDistricts() {
   const [rows, setRows] = useState([]);
@@ -13,349 +36,382 @@ export default function TopDangerousDistricts() {
 
   useEffect(() => {
     fetch("/collision.csv")
-      .then((res) => res.text())
+      .then((r) => r.text())
       .then((text) => {
-        const parsed = Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-        });
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
         setRows(parsed.data || []);
       })
       .catch((err) => console.error("CSV load error:", err))
       .finally(() => setLoading(false));
   }, []);
 
-  // Calculate all districts with statistics
   const districtsStats = useMemo(() => {
-    const districtMap = {};
-
+    const map = {};
     rows.forEach((r) => {
       const district = (r.District || "").trim();
       if (!district) return;
-
-      if (!districtMap[district]) {
-        districtMap[district] = {
+      if (!map[district]) {
+        map[district] = {
           totalCollisions: 0,
           trainCollisions: 0,
           roadCollisions: 0,
           vehicleTypes: new Set(),
           animalTypes: new Set(),
-          regions: new Set(),
-          coordinates: [],
         };
       }
-
-      const stats = districtMap[district];
-      stats.totalCollisions += 1;
-
+      const s = map[district];
+      s.totalCollisions += 1;
       const vt = (r.vehicle_type || "").toLowerCase();
-      if (vt === "train") {
-        stats.trainCollisions += 1;
-      } else if (vt.includes("car") || vt.includes("bus") || vt.includes("vehicle")) {
-        stats.roadCollisions += 1;
-      }
-
-      const vehicleType = r.vehicle_type || "Unknown";
-      stats.vehicleTypes.add(vehicleType);
-
-      const animalType = r.animal_type || "Unknown";
-      stats.animalTypes.add(animalType);
-
-      const region = r.Region || "Unknown";
-      stats.regions.add(region);
-
-      const lat = Number(r.latitude);
-      const lon = Number(r.longitude);
-      if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
-        stats.coordinates.push({ lat, lon });
-      }
+      if (vt === "train") s.trainCollisions += 1;
+      else if (vt.includes("car") || vt.includes("bus") || vt.includes("vehicle")) s.roadCollisions += 1;
+      s.vehicleTypes.add(r.vehicle_type || "Unknown");
+      s.animalTypes.add(r.animal_type || "Unknown");
     });
 
-    return Object.entries(districtMap)
-      .map(([district, stats]) => ({
+    return Object.entries(map)
+      .map(([district, s]) => ({
         district,
-        totalCollisions: stats.totalCollisions,
-        trainCollisions: stats.trainCollisions,
-        roadCollisions: stats.roadCollisions,
-        vehicleTypeCount: stats.vehicleTypes.size,
-        animalTypeCount: stats.animalTypes.size,
-        regionCount: stats.regions.size,
-        coordinateCount: stats.coordinates.length,
+        totalCollisions: s.totalCollisions,
+        trainCollisions: s.trainCollisions,
+        roadCollisions: s.roadCollisions,
+        vehicleTypeCount: s.vehicleTypes.size,
+        animalTypeCount: s.animalTypes.size,
       }))
       .sort((a, b) => b.totalCollisions - a.totalCollisions);
   }, [rows]);
 
-  // Top 10 dangerous districts
-  const topDistricts = useMemo(() => {
-    return districtsStats.slice(0, 10);
-  }, [districtsStats]);
-
-  const COLORS = ['#ef4444', '#ff6b6b', '#ff8787', '#ff9999', '#ff9999', '#ffb3b3', '#ffcccc', '#ffe0e0', '#fff0f0'];
-
-  const handleDistrictClick = (district) => {
-    navigate(`/district/${encodeURIComponent(district)}`);
-  };
+  const topDistricts = useMemo(() => districtsStats.slice(0, 10), [districtsStats]);
 
   if (loading) {
     return (
       <div className="dash">
         <Sidebar />
         <main className="dash__content">
-          <div style={{ padding: '40px', textAlign: 'center' }}>
-            <p>Loading dangerous districts...</p>
+          <div className="dash__loading">
+            <div className="dash__loading-text">Loading district data…</div>
           </div>
         </main>
       </div>
     );
   }
 
+  const avgCollisions = districtsStats.length > 0
+    ? (rows.length / districtsStats.length).toFixed(1)
+    : "—";
+
   return (
     <div className="dash">
       <Sidebar />
+
       <main className="dash__content">
+        {/* ── Header ────────────────────────────────────────── */}
         <div className="dash__header">
           <div>
             <h2 className="dash__title">Top Dangerous Districts</h2>
             <p className="dash__subtitle">
-              Districts with the highest collision counts from the dataset
+              Districts ranked by total animal–vehicle collision count
             </p>
           </div>
-
-          <div className="dash__badge">
-            {districtsStats.length} districts analyzed
-          </div>
+          <div className="dash__badge">{districtsStats.length} districts analyzed</div>
         </div>
 
-        {/* KPI CARDS */}
+        {/* ── KPI Cards ──────────────────────────────────────── */}
         <section className="dash__kpis">
           <KpiCard
+            icon="🏛️"
             title="Total Districts"
             value={districtsStats.length}
-            hint="In dataset"
+            description="In the dataset"
+            badgeColor="#4ade80"
+            badge="All"
           />
           <KpiCard
+            icon="⚠️"
             title="Most Dangerous"
             value={topDistricts[0]?.district || "—"}
-            hint={topDistricts[0] ? `${topDistricts[0].totalCollisions} collisions` : "—"}
+            description={topDistricts[0] ? `${topDistricts[0].totalCollisions} collisions` : "—"}
+            badgeColor="#ef4444"
+            badge="#1"
           />
           <KpiCard
+            icon="📊"
             title="Total Collisions"
-            value={rows.length}
-            hint="Across all districts"
+            value={rows.length.toLocaleString()}
+            description="Across all districts"
+            badgeColor="#60a5fa"
+            badge="Total"
           />
           <KpiCard
+            icon="📉"
             title="Avg per District"
-            value={districtsStats.length > 0 ? Math.round(rows.length / districtsStats.length) : 0}
-            hint="Average collisions"
+            value={avgCollisions}
+            description="Average collision count"
+            badgeColor="#facc15"
+            badge="Avg"
           />
         </section>
 
-        {/* PANELS */}
+        {/* ── Panels ─────────────────────────────────────────── */}
         <section className="dash__grid">
-          {/* Top 10 Bar Chart */}
-          <div className="panel" style={{ gridColumn: '1 / -1' }}>
+
+          {/* Bar Chart – top 10 */}
+          <div className="panel panel--span2">
             <div className="panel__head">
               <h3 className="panel__title">Top 10 Most Dangerous Districts</h3>
-              <span className="panel__meta">By collision count</span>
+              <span className="panel__meta">Click bar to drill down</span>
             </div>
-
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={topDistricts}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart
+                data={topDistricts}
+                margin={{ top: 6, right: 16, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis
                   dataKey="district"
-                  angle={-45}
+                  tick={{ fill: "#e6edf3", fontSize: 12, fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  angle={-30}
                   textAnchor="end"
-                  height={100}
+                  height={56}
                 />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    padding: '8px'
-                  }}
-                  cursor={{ fill: 'rgba(0,0,0,0.1)' }}
+                <YAxis
+                  tick={{ fill: "#8b949e", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={38}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  wrapperStyle={{ fontSize: 11, color: "#8b949e", paddingTop: 10 }}
+                  formatter={() => "Total collisions"}
                 />
                 <Bar
                   dataKey="totalCollisions"
-                  fill="#ef4444"
-                  radius={[8, 8, 0, 0]}
-                  onClick={(data) => handleDistrictClick(data.district)}
-                  style={{ cursor: 'pointer' }}
+                  name="Collisions"
+                  radius={[6, 6, 0, 0]}
+                  onClick={(d) => navigate(`/district/${encodeURIComponent(d.district)}`)}
+                  style={{ cursor: "pointer" }}
                 >
-                  {topDistricts.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {topDistricts.map((_, i) => (
+                    <Cell key={i} fill={DANGER_PALETTE[i % DANGER_PALETTE.length]} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-
             <p className="panel__note">
-              Click on any bar to view detailed statistics for that district.
+              Bars colour-coded from most (red) to least (yellow) dangerous. Click any bar for detailed district analysis.
             </p>
           </div>
 
-          {/* Detailed Ranking Table */}
-          <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          {/* Ranking Table */}
+          <div className="panel panel--span2">
             <div className="panel__head">
-              <h3 className="panel__title">Detailed Ranking - Top 20 Districts</h3>
-              <span className="panel__meta">Comprehensive analysis</span>
+              <h3 className="panel__title">Detailed Ranking — Top 20 Districts</h3>
+              <span className="panel__meta">Comprehensive breakdown</span>
             </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <div style={{ overflowX: "auto" }}>
+              <table className="districts-table">
                 <thead>
-                  <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #0088FE' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Rank</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>District</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Total Collisions</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Train</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Road</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Vehicle Types</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Animal Types</th>
-                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>Action</th>
+                  <tr>
+                    <th>Rank</th>
+                    <th>District</th>
+                    <th className="num">Total</th>
+                    <th className="num">Train</th>
+                    <th className="num">Road</th>
+                    <th className="num">Vehicle Types</th>
+                    <th className="num">Animal Types</th>
+                    <th className="num">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {districtsStats.slice(0, 20).map((d, idx) => (
-                    <tr
-                      key={d.district}
-                      style={{
-                        borderBottom: '1px solid #eee',
-                        backgroundColor: idx % 2 === 0 ? '#fff' : '#f9f9f9',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#f9f9f9'}
-                    >
-                      <td style={{ padding: '12px', fontWeight: 'bold', color: '#0088FE' }}>#{idx + 1}</td>
-                      <td style={{ padding: '12px' }}>
-                        <strong>{d.district}</strong>
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'right', color: '#ef4444', fontWeight: 'bold' }}>
-                        {d.totalCollisions}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>{d.trainCollisions}</td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>{d.roadCollisions}</td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>{d.vehicleTypeCount}</td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>{d.animalTypeCount}</td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleDistrictClick(d.district)}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#0088FE',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {districtsStats.slice(0, 20).map((d, idx) => {
+                    const severity = idx === 0
+                      ? "#ef4444"
+                      : idx < 3
+                      ? "#f97316"
+                      : idx < 6
+                      ? "#facc15"
+                      : "#4ade80";
+                    return (
+                      <tr
+                        key={d.district}
+                        className="districts-table__row"
+                        onClick={() => navigate(`/district/${encodeURIComponent(d.district)}`)}
+                      >
+                        <td>
+                          <span className="rank-badge" style={{ color: severity }}>
+                            #{idx + 1}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="district-name">{d.district}</span>
+                        </td>
+                        <td className="num" style={{ color: severity, fontWeight: 700 }}>
+                          {d.totalCollisions}
+                        </td>
+                        <td className="num">{d.trainCollisions}</td>
+                        <td className="num">{d.roadCollisions}</td>
+                        <td className="num">{d.vehicleTypeCount}</td>
+                        <td className="num">{d.animalTypeCount}</td>
+                        <td className="num">
+                          <button
+                            className="view-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/district/${encodeURIComponent(d.district)}`);
+                            }}
+                          >
+                            View →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-
             <p className="panel__note">
-              All statistics are dynamically calculated from the collision dataset. Click "View" or district name to see detailed analysis.
+              Click any row or "View →" to open the detailed district analysis page.
             </p>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary stats */}
           <div className="panel">
             <div className="panel__head">
-              <h3 className="panel__title">Summary Statistics</h3>
-              <span className="panel__meta">Overview</span>
+              <h3 className="panel__title">Top 3 Hotspots</h3>
+              <span className="panel__meta">Highest risk</span>
             </div>
-
-            <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <StatItem
-                label="Most Dangerous"
-                value={topDistricts[0]?.district || "—"}
-                subtext={topDistricts[0] ? `${topDistricts[0].totalCollisions} collisions` : ""}
-              />
-              <StatItem
-                label="2nd Most Dangerous"
-                value={topDistricts[1]?.district || "—"}
-                subtext={topDistricts[1] ? `${topDistricts[1].totalCollisions} collisions` : ""}
-              />
-              <StatItem
-                label="3rd Most Dangerous"
-                value={topDistricts[2]?.district || "—"}
-                subtext={topDistricts[2] ? `${topDistricts[2].totalCollisions} collisions` : ""}
-              />
-              <StatItem
-                label="Avg Collisions"
-                value={districtsStats.length > 0 ? (rows.length / districtsStats.length).toFixed(1) : "—"}
-                subtext="per district"
-              />
+            <div className="stats-grid">
+              {topDistricts.slice(0, 3).map((d, i) => (
+                <StatItem
+                  key={d.district}
+                  label={`#${i + 1} ${d.district}`}
+                  value={d.totalCollisions}
+                />
+              ))}
+              <StatItem label="Avg per District" value={avgCollisions} />
             </div>
           </div>
 
-          {/* Collision Distribution */}
+          {/* Collision distribution */}
           <div className="panel">
             <div className="panel__head">
-              <h3 className="panel__title">Collision Distribution</h3>
-              <span className="panel__meta">Key insights</span>
+              <h3 className="panel__title">Collision Summary</h3>
+              <span className="panel__meta">Overall stats</span>
             </div>
-
-            <div style={{ padding: '16px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Total Collisions</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{rows.length}</div>
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Train Collisions</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0088FE' }}>
-                  {rows.filter(r => (r.vehicle_type || "").toLowerCase() === "train").length}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Districts Analyzed</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#00C49F' }}>{districtsStats.length}</div>
-              </div>
+            <div className="stats-grid">
+              <StatItem label="Total Incidents" value={rows.length.toLocaleString()} />
+              <StatItem
+                label="Train Collisions"
+                value={rows.filter((r) => (r.vehicle_type || "").toLowerCase() === "train").length}
+              />
+              <StatItem label="Districts" value={districtsStats.length} />
+              <StatItem label="Top District" value={topDistricts[0]?.district || "—"} />
             </div>
           </div>
+
         </section>
       </main>
+
+      <style>{`
+        .districts-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+          min-width: 600px;
+        }
+        .districts-table thead tr {
+          border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .districts-table th {
+          padding: 10px 14px;
+          text-align: left;
+          font-size: 10px;
+          font-weight: 700;
+          color: #6e7681;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          background: rgba(255,255,255,0.02);
+          white-space: nowrap;
+        }
+        .districts-table th.num,
+        .districts-table td.num {
+          text-align: right;
+        }
+        .districts-table td {
+          padding: 11px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          color: #c9d1d9;
+          vertical-align: middle;
+        }
+        .districts-table__row {
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .districts-table__row:hover td {
+          background: rgba(34, 197, 94, 0.06);
+        }
+        .rank-badge {
+          font-weight: 800;
+          font-size: 13px;
+        }
+        .district-name {
+          font-weight: 600;
+          color: #e6edf3;
+        }
+        .view-btn {
+          background: rgba(34, 197, 94, 0.1);
+          color: #4ade80;
+          border: 1px solid rgba(34, 197, 94, 0.25);
+          padding: 4px 10px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 600;
+          transition: background 0.2s;
+          white-space: nowrap;
+        }
+        .view-btn:hover {
+          background: rgba(34, 197, 94, 0.2);
+        }
+      `}</style>
     </div>
   );
 }
 
-/* ============ Helper Components ============ */
-
-function KpiCard({ title, value, hint }) {
+/* ─────────────────────────────────────────────────────────── */
+function KpiCard({ icon, title, value, description, badge, badgeColor }) {
   return (
     <div className="kpi">
+      <div className="kpi__top">
+        <div className="kpi__icon">{icon}</div>
+        {badge && (
+          <span
+            className="kpi__badge"
+            style={{
+              backgroundColor: badgeColor + "18",
+              color: badgeColor,
+              border: `1px solid ${badgeColor}30`,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
       <div className="kpi__title">{title}</div>
       <div className="kpi__value">{value}</div>
-      <div className="kpi__hint">{hint}</div>
+      <div className="kpi__description">{description}</div>
     </div>
   );
 }
 
-function StatItem({ label, value, subtext }) {
+function StatItem({ label, value }) {
   return (
-    <div style={{
-      padding: '12px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: '6px',
-      borderLeft: '4px solid #0088FE'
-    }}>
-      <div style={{ fontSize: '13px', color: '#666' }}>{label}</div>
-      <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px', color: '#333' }}>
-        {value}
-      </div>
-      {subtext && <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{subtext}</div>}
+    <div className="stat-item">
+      <div className="stat-item__label">{label}</div>
+      <div className="stat-item__value">{value}</div>
     </div>
   );
 }
