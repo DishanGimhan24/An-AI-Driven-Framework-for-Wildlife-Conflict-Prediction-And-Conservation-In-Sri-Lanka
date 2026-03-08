@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { DISHAN_API } from "../apiConfig";
+import { Search, Filter, AlertTriangle, MapPin, Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -29,8 +30,26 @@ const getDistrict = (lat, lon) => {
 };
 
 const safetyLabel = (s) => s < 30 ? "High" : s < 60 ? "Medium" : s < 80 ? "Moderate" : "Low";
-const safetyColor = (s) => s < 30 ? "#d32f2f" : s < 60 ? "#f57c00" : s < 80 ? "#fbc02d" : "#388e3c";
-const safetyBg    = (s) => s < 30 ? "#ffebee" : s < 60 ? "#fff3e0" : s < 80 ? "#fffde7" : "#e8f5e9";
+
+const dangerStyle = (s) => {
+  if (s < 30) return { bg: "rgba(239,68,68,0.12)", color: "#f87171", border: "rgba(239,68,68,0.3)" };
+  if (s < 60) return { bg: "rgba(245,158,11,0.12)", color: "#fbbf24", border: "rgba(245,158,11,0.3)" };
+  if (s < 80) return { bg: "rgba(251,191,36,0.1)", color: "#fcd34d", border: "rgba(251,191,36,0.25)" };
+  return { bg: "rgba(16,185,129,0.12)", color: "#34d399", border: "rgba(16,185,129,0.3)" };
+};
+
+const selectStyle = {
+  padding: "10px 14px",
+  fontSize: "13px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.15)",
+  cursor: "pointer",
+  outline: "none",
+  background: "rgba(255,255,255,0.06)",
+  color: "#e5e7eb",
+  fontFamily: "'Inter', -apple-system, sans-serif",
+  backdropFilter: "blur(10px)",
+};
 
 export default function HotspotsPage() {
   const [nodes, setNodes]               = useState([]);
@@ -55,7 +74,6 @@ export default function HotspotsPage() {
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
-  // Filter
   const filtered = nodes.filter(n => {
     if (search && !String(n.node_id).includes(search) && !n.district.toLowerCase().includes(search.toLowerCase())) return false;
     if (districtFilter !== "All" && n.district !== districtFilter) return false;
@@ -67,7 +85,6 @@ export default function HotspotsPage() {
     return true;
   });
 
-  // Sort
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === "safety_asc")    return a.safety_score - b.safety_score;
     if (sortBy === "safety_desc")   return b.safety_score - a.safety_score;
@@ -80,151 +97,286 @@ export default function HotspotsPage() {
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
   const paged = sorted.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
-  const inputStyle = { padding: "8px 12px", fontSize: "13px", borderRadius: "6px", border: "1px solid #ccc", cursor: "pointer", outline: "none" };
-
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 60px)", fontSize: "16px", color: "#666" }}>
-      <span style={{ marginRight: "10px", fontSize: "30px" }}>🐘</span> Loading hotspots...
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      height: "calc(100vh - 60px)", fontSize: "16px", color: "#34d399",
+      background: "linear-gradient(135deg, #0a0e14 0%, #064e3b 50%, #0a0e14 100%)",
+      fontFamily: "'Inter', sans-serif", gap: "12px"
+    }}>
+      <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
+      Loading hotspots...
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   if (error) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 60px)", color: "#d32f2f" }}>
-      ⚠️ {error}. Make sure API server is running.
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      height: "calc(100vh - 60px)", color: "#f87171", gap: "10px",
+      background: "linear-gradient(135deg, #0a0e14 0%, #064e3b 50%, #0a0e14 100%)",
+      fontFamily: "'Inter', sans-serif", fontSize: "15px"
+    }}>
+      <AlertTriangle size={20} />
+      {error}. Make sure API server is running.
     </div>
   );
 
   return (
-    <div style={{ minHeight: "calc(100vh - 60px)", backgroundColor: "#f4f6fb" }}>
+    <div style={{
+      minHeight: "calc(100vh - 60px)",
+      background: "linear-gradient(135deg, #0a0e14 0%, #064e3b 50%, #0a0e14 100%)",
+      backgroundAttachment: "fixed",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    }}>
 
       {/* Page header */}
-      <div style={{ backgroundColor: "#1B5E20", color: "white", padding: "24px 32px" }}>
-        <h1 style={{ margin: "0 0 6px 0", fontSize: "22px", fontWeight: "700" }}>🐘 Elephant Hotspot Zones</h1>
-        <p style={{ margin: 0, fontSize: "13px", opacity: 0.85 }}>
-          {nodes.length} high-use elephant zones detected via DBSCAN clustering · Showing {sorted.length} filtered results
-        </p>
+      <div style={{
+        background: "rgba(255,255,255,0.06)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+        padding: "28px 36px",
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+      }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: "14px",
+          background: "rgba(16,185,129,0.15)",
+          border: "1px solid rgba(16,185,129,0.3)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "24px"
+        }}>🐘</div>
+        <div>
+          <h1 style={{ margin: "0 0 4px", fontSize: "22px", fontWeight: "800", color: "#f3f4f6" }}>
+            Elephant Hotspot Zones
+          </h1>
+          <p style={{ margin: 0, fontSize: "13px", color: "#9ca3af" }}>
+            {nodes.length} high-use elephant zones detected via DBSCAN clustering · Showing {sorted.length} filtered results
+          </p>
+        </div>
       </div>
 
       {/* Filter bar */}
-      <div style={{ backgroundColor: "white", borderBottom: "1px solid #e0e0e0", padding: "14px 32px", display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
-        <input
-          placeholder="🔍 Search node ID or district..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(0); }}
-          style={{ ...inputStyle, minWidth: "220px" }}
-        />
-        <select value={districtFilter} onChange={e => { setDistrict(e.target.value); setPage(0); }} style={inputStyle}>
-          {DISTRICTS.map(d => <option key={d} value={d}>{d === "All" ? "All Districts" : d}</option>)}
+      <div style={{
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(10px)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        padding: "14px 36px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "10px",
+        alignItems: "center"
+      }}>
+        <div style={{ position: "relative" }}>
+          <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" }} />
+          <input
+            placeholder="Search node ID or district..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            style={{ ...selectStyle, paddingLeft: "34px", minWidth: "220px" }}
+          />
+        </div>
+        <select value={districtFilter} onChange={e => { setDistrict(e.target.value); setPage(0); }} style={selectStyle}>
+          {DISTRICTS.map(d => <option key={d} value={d} style={{ background: "#1f2937" }}>{d === "All" ? "All Districts" : d}</option>)}
         </select>
-        <select value={dangerFilter} onChange={e => { setDanger(e.target.value); setPage(0); }} style={inputStyle}>
-          <option value="All">All Danger Levels</option>
-          <option value="High">🔴 High Danger</option>
-          <option value="Medium">🟠 Medium</option>
-          <option value="Moderate">🟡 Moderate</option>
-          <option value="Low">🟢 Low</option>
+        <select value={dangerFilter} onChange={e => { setDanger(e.target.value); setPage(0); }} style={selectStyle}>
+          <option value="All" style={{ background: "#1f2937" }}>All Danger Levels</option>
+          <option value="High" style={{ background: "#1f2937" }}>High Danger</option>
+          <option value="Medium" style={{ background: "#1f2937" }}>Medium</option>
+          <option value="Moderate" style={{ background: "#1f2937" }}>Moderate</option>
+          <option value="Low" style={{ background: "#1f2937" }}>Low</option>
         </select>
-        <select value={eleFilter} onChange={e => { setEle(e.target.value); setPage(0); }} style={inputStyle}>
-          <option value="All">All Elephant Counts</option>
-          <option value="1">1 Elephant</option>
-          <option value="2">2 Elephants</option>
-          <option value="3+">3+ Elephants</option>
+        <select value={eleFilter} onChange={e => { setEle(e.target.value); setPage(0); }} style={selectStyle}>
+          <option value="All" style={{ background: "#1f2937" }}>All Elephant Counts</option>
+          <option value="1" style={{ background: "#1f2937" }}>1 Elephant</option>
+          <option value="2" style={{ background: "#1f2937" }}>2 Elephants</option>
+          <option value="3+" style={{ background: "#1f2937" }}>3+ Elephants</option>
         </select>
-        <select value={protectedFilter} onChange={e => { setProtected(e.target.value); setPage(0); }} style={inputStyle}>
-          <option value="All">All Areas</option>
-          <option value="1">Protected Only</option>
-          <option value="0">Unprotected Only</option>
+        <select value={protectedFilter} onChange={e => { setProtected(e.target.value); setPage(0); }} style={selectStyle}>
+          <option value="All" style={{ background: "#1f2937" }}>All Areas</option>
+          <option value="1" style={{ background: "#1f2937" }}>Protected Only</option>
+          <option value="0" style={{ background: "#1f2937" }}>Unprotected Only</option>
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={inputStyle}>
-          <option value="safety_asc">Sort: Most Dangerous First</option>
-          <option value="safety_desc">Sort: Safest First</option>
-          <option value="sightings">Sort: Most Sightings</option>
-          <option value="elephants">Sort: Most Elephants</option>
-          <option value="human_dist">Sort: Closest to Humans</option>
-          <option value="id">Sort: Node ID</option>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
+          <option value="safety_asc" style={{ background: "#1f2937" }}>Most Dangerous First</option>
+          <option value="safety_desc" style={{ background: "#1f2937" }}>Safest First</option>
+          <option value="sightings" style={{ background: "#1f2937" }}>Most Sightings</option>
+          <option value="elephants" style={{ background: "#1f2937" }}>Most Elephants</option>
+          <option value="human_dist" style={{ background: "#1f2937" }}>Closest to Humans</option>
+          <option value="id" style={{ background: "#1f2937" }}>Node ID</option>
         </select>
-        <span style={{ marginLeft: "auto", fontSize: "13px", color: "#888" }}>
-          {sorted.length} out of {nodes.length} zones
+        <span style={{ marginLeft: "auto", fontSize: "12px", color: "#6b7280", display: "flex", alignItems: "center", gap: "6px" }}>
+          <Filter size={13} />
+          {sorted.length} of {nodes.length} zones
         </span>
       </div>
 
       {/* Table */}
-      <div style={{ padding: "20px 32px", overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 2px 10px rgba(0,0,0,0.07)", overflow: "hidden" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#1B5E20", color: "white" }}>
-              {["Node ID", "District", "Coordinates", "Elephants", "Sightings", "Active Hours", "NDVI", "Human Dist.", "Protected", "Danger"].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {paged.map((n, i) => {
-              const isExp = expanded === n.node_id;
-              const sc = safetyColor(n.safety_score);
-              const sb = safetyBg(n.safety_score);
-              return (
-                <>
-                  <tr key={n.node_id}
-                    onClick={() => setExpanded(isExp ? null : n.node_id)}
-                    style={{ backgroundColor: i % 2 === 0 ? "#fafafa" : "white", cursor: "pointer", borderBottom: "1px solid #f0f0f0", transition: "background 0.15s" }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "#e8f5e9"}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fafafa" : "white"}
-                  >
-                    <td style={{ padding: "11px 14px", fontSize: "13px", fontWeight: "700", color: "#1B5E20" }}>#{n.node_id}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px" }}>{n.district}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "11px", color: "#666", fontFamily: "monospace" }}>
-                      {n.center_lat.toFixed(4)}, {n.center_lon.toFixed(4)}
-                    </td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", textAlign: "center" }}>
-                      {"🐘".repeat(Math.min(n.elephant_count, 5))} <span style={{ fontSize: "11px", color: "#888" }}>×{n.elephant_count}</span>
-                    </td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", textAlign: "center", fontWeight: "600" }}>{n.sighting_count}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "11px", color: "#555" }}>{n.active_hours.map(h => `${h}:00`).join(", ")}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", textAlign: "center" }}>{n.avg_ndvi.toFixed(3)}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", textAlign: "center" }}>{(n.avg_human_distance / 1000).toFixed(1)} km</td>
-                    <td style={{ padding: "11px 14px", textAlign: "center" }}>
-                      <span style={{ fontSize: "16px" }}>{n.protected ? "🌿" : "🏘️"}</span>
-                    </td>
-                    <td style={{ padding: "11px 14px" }}>
-                      <span style={{ backgroundColor: sb, color: sc, padding: "3px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>
-                        {safetyLabel(n.safety_score)} · {n.safety_score.toFixed(0)}
-                      </span>
-                    </td>
-                  </tr>
-                  {isExp && (
-                    <tr key={`exp-${n.node_id}`} style={{ backgroundColor: "#f1f8e9" }}>
-                      <td colSpan={10} style={{ padding: "14px 24px" }}>
-                        <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", fontSize: "12px", color: "#444" }}>
-                          <div><strong>Radius:</strong> {n.radius_meters.toFixed(0)} m</div>
-                          <div><strong>Safety Score:</strong> {n.safety_score.toFixed(1)} / 100</div>
-                          <div><strong>Land Cover:</strong> {n.land_cover}</div>
-                          {n.elephants && n.elephants.filter(e => e !== "Negative").length > 0 && (
-                            <div><strong>Known Elephants:</strong>{" "}
-                              {n.elephants.filter(e => e !== "Negative").map((e, i) => (
-                                <span key={i} style={{ display: "inline-block", backgroundColor: "#c8e6c9", color: "#1B5E20", padding: "2px 8px", borderRadius: "10px", margin: "0 3px", fontWeight: "600" }}>{e}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+      <div style={{ padding: "24px 36px", overflowX: "auto" }}>
+        <div style={{
+          background: "rgba(255,255,255,0.06)",
+          backdropFilter: "blur(20px)",
+          borderRadius: "20px",
+          border: "1px solid rgba(255,255,255,0.12)",
+          overflow: "hidden",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.37)"
+        }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(16,185,129,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                {["Node ID", "District", "Coordinates", "Elephants", "Sightings", "Active Hours", "NDVI", "Human Dist.", "Protected", "Danger"].map(h => (
+                  <th key={h} style={{
+                    padding: "14px 16px",
+                    textAlign: "left",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "#9ca3af",
+                    whiteSpace: "nowrap",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map((n, i) => {
+                const isExp = expanded === n.node_id;
+                const ds = dangerStyle(n.safety_score);
+                return (
+                  <>
+                    <tr
+                      key={n.node_id}
+                      onClick={() => setExpanded(isExp ? null : n.node_id)}
+                      style={{
+                        backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                        cursor: "pointer",
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        transition: "background 0.15s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(16,185,129,0.07)"}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"}
+                    >
+                      <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: "700", color: "#34d399" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <MapPin size={13} color="#10b981" />
+                          #{n.node_id}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", color: "#e5e7eb" }}>{n.district}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "11px", color: "#6b7280", fontFamily: "monospace" }}>
+                        {n.center_lat.toFixed(4)}, {n.center_lon.toFixed(4)}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", textAlign: "center" }}>
+                        {"🐘".repeat(Math.min(n.elephant_count, 5))}
+                        <span style={{ fontSize: "11px", color: "#6b7280", marginLeft: "4px" }}>×{n.elephant_count}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", textAlign: "center", fontWeight: "700", color: "#e5e7eb" }}>{n.sighting_count}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "11px", color: "#9ca3af" }}>{n.active_hours.map(h => `${h}:00`).join(", ")}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", textAlign: "center", color: "#e5e7eb" }}>{n.avg_ndvi.toFixed(3)}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", textAlign: "center", color: "#e5e7eb" }}>{(n.avg_human_distance / 1000).toFixed(1)} km</td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <span style={{ fontSize: "16px" }}>{n.protected ? "🌿" : "🏘️"}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{
+                          backgroundColor: ds.bg,
+                          color: ds.color,
+                          border: `1px solid ${ds.border}`,
+                          padding: "4px 12px",
+                          borderRadius: "20px",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          whiteSpace: "nowrap",
+                          display: "inline-block"
+                        }}>
+                          {safetyLabel(n.safety_score)} · {n.safety_score.toFixed(0)}
+                        </span>
                       </td>
                     </tr>
-                  )}
-                </>
-              );
-            })}
-          </tbody>
-        </table>
+                    {isExp && (
+                      <tr key={`exp-${n.node_id}`}>
+                        <td colSpan={10} style={{
+                          padding: "16px 28px",
+                          background: "rgba(16,185,129,0.05)",
+                          borderBottom: "1px solid rgba(255,255,255,0.06)"
+                        }}>
+                          <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", fontSize: "12px", color: "#9ca3af" }}>
+                            <div><strong style={{ color: "#34d399" }}>Radius:</strong> {n.radius_meters.toFixed(0)} m</div>
+                            <div><strong style={{ color: "#34d399" }}>Safety Score:</strong> {n.safety_score.toFixed(1)} / 100</div>
+                            <div><strong style={{ color: "#34d399" }}>Land Cover:</strong> {n.land_cover}</div>
+                            {n.elephants && n.elephants.filter(e => e !== "Negative").length > 0 && (
+                              <div>
+                                <strong style={{ color: "#34d399" }}>Known Elephants:</strong>{" "}
+                                {n.elephants.filter(e => e !== "Negative").map((e, idx) => (
+                                  <span key={idx} style={{
+                                    display: "inline-block",
+                                    background: "rgba(16,185,129,0.15)",
+                                    color: "#34d399",
+                                    border: "1px solid rgba(16,185,129,0.3)",
+                                    padding: "2px 10px",
+                                    borderRadius: "20px",
+                                    margin: "0 3px",
+                                    fontWeight: "700"
+                                  }}>{e}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "20px" }}>
-            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} style={{ padding: "7px 16px", borderRadius: "6px", border: "1px solid #ccc", cursor: page === 0 ? "not-allowed" : "pointer", backgroundColor: page === 0 ? "#f5f5f5" : "white", fontSize: "13px" }}>← Prev</button>
-            <span style={{ fontSize: "13px", color: "#666" }}>Page {page + 1} of {totalPages}</span>
-            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} style={{ padding: "7px 16px", borderRadius: "6px", border: "1px solid #ccc", cursor: page >= totalPages - 1 ? "not-allowed" : "pointer", backgroundColor: page >= totalPages - 1 ? "#f5f5f5" : "white", fontSize: "13px" }}>Next →</button>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", marginTop: "24px" }}>
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(p => p - 1)}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "10px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                cursor: page === 0 ? "not-allowed" : "pointer",
+                background: page === 0 ? "rgba(255,255,255,0.03)" : "rgba(16,185,129,0.12)",
+                color: page === 0 ? "#6b7280" : "#34d399",
+                fontSize: "13px",
+                fontWeight: "600",
+                fontFamily: "'Inter', sans-serif",
+                transition: "all 0.2s",
+              }}
+            >← Prev</button>
+            <span style={{ fontSize: "13px", color: "#9ca3af", background: "rgba(255,255,255,0.06)", padding: "10px 20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(p => p + 1)}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "10px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                cursor: page >= totalPages - 1 ? "not-allowed" : "pointer",
+                background: page >= totalPages - 1 ? "rgba(255,255,255,0.03)" : "rgba(16,185,129,0.12)",
+                color: page >= totalPages - 1 ? "#6b7280" : "#34d399",
+                fontSize: "13px",
+                fontWeight: "600",
+                fontFamily: "'Inter', sans-serif",
+                transition: "all 0.2s",
+              }}
+            >Next →</button>
           </div>
         )}
         {paged.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px", color: "#888", fontSize: "15px" }}>No hotspots match the current filters.</div>
+          <div style={{ textAlign: "center", padding: "60px", color: "#6b7280", fontSize: "15px" }}>
+            No hotspots match the current filters.
+          </div>
         )}
       </div>
     </div>

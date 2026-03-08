@@ -1,4 +1,5 @@
 import "./HimashiHome.css";
+import { Eye, TrendingUp, ShieldCheck } from "lucide-react";
 
 export default function HimashiHome() {
   return (
@@ -22,15 +23,18 @@ export default function HimashiHome() {
       <div className="home__featureWrap">
         <div className="home__cards">
           <FeatureCard
-            title="📍 Risk Mapping"
+            icon={<Eye size={32} color="#34d399" />}
+            title="Risk Mapping"
             text="Visualizes high-risk road/rail segments using historical collision data, spatial clustering, and geospatial analysis."
           />
           <FeatureCard
-            title="🤖 AI-Based Analysis"
+            icon={<TrendingUp size={32} color="#34d399" />}
+            title="AI-Based Analysis"
             text="Machine learning analyzes environmental factors (NDVI, rainfall, distance to forests) to estimate collision risk."
           />
           <FeatureCard
-            title="🐘 Conservation Support"
+            icon={<ShieldCheck size={32} color="#34d399" />}
+            title="Conservation Support"
             text="Helps wildlife officers and planners reduce human–elephant conflict and improve safety decisions."
           />
         </div>
@@ -47,16 +51,17 @@ export default function HimashiHome() {
 function StatCard({ icon, number, text }) {
   return (
     <div className="hm-stat">
-      <div className="hm-stat__icon">{icon}</div>
+      <span className="hm-stat__icon">{icon}</span>
       <h3 className="hm-stat__number">{number}</h3>
       <p className="hm-stat__text">{text}</p>
     </div>
   );
 }
 
-function FeatureCard({ title, text }) {
+function FeatureCard({ icon, title, text }) {
   return (
     <div className="hm-card">
+      <span className="hm-card__icon">{icon}</span>
       <h3 className="hm-card__title">{title}</h3>
       <p className="hm-card__text">{text}</p>
     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { DISHAN_API } from "./apiConfig";
+import { AlertTriangle, Cpu, Car, Activity } from "lucide-react";
 
 const FEATURES = [
   {
@@ -9,100 +10,101 @@ const FEATURES = [
     icon: "🗺️",
     title: "Elephant Movement Map",
     desc: "Interactive map of 159 hotspot zones and movement corridors. Filter by district, danger level, elephant count, and active hours. Click corridors to view human-distance zones.",
-    color: "#1565C0",
-    bgColor: "#E3F2FD",
-    border: "#90CAF9",
+    accent: "#34d399",
   },
   {
     path: "/hotspots",
     icon: "🐘",
     title: "Hotspot Zones",
     desc: "Browse all DBSCAN-clustered elephant activity zones. Each hotspot shows sighting count, elephant identities, NDVI, proximity to humans, and safety score.",
-    color: "#2E7D32",
-    bgColor: "#E8F5E9",
-    border: "#A5D6A7",
+    accent: "#10b981",
   },
   {
     path: "/corridors",
     icon: "🛤️",
     title: "Movement Corridors",
     desc: "Explore elephant movement paths between hotspots. See safety scores, usage frequency, active hours, corridor length, and road crossing count per corridor.",
-    color: "#6A1B9A",
-    bgColor: "#F3E5F5",
-    border: "#CE93D8",
+    accent: "#a78bfa",
   },
   {
     path: "/road-crossings",
     icon: "🚗",
     title: "Road Crossings",
     desc: "Where elephant corridors cross roads. Includes danger score, night crossing ratio, peak season, traffic exposure, and named elephant crossings.",
-    color: "#B71C1C",
-    bgColor: "#FFEBEE",
-    border: "#EF9A9A",
+    accent: "#f87171",
   },
   {
     path: "/predict",
     icon: "🔮",
     title: "Risk Prediction",
     desc: "Click any location in Sri Lanka for an AI-powered conflict risk score using XGBoost ML. Get elephant presence probability, nearest hotspot & corridor details, and safety recommendations.",
-    color: "#E65100",
-    bgColor: "#FFF3E0",
-    border: "#FFCC80",
+    accent: "#fb923c",
   },
   {
     path: "/risk-dashboard",
     icon: "📊",
     title: "Risk Analytics Dashboard",
     desc: "CSV-driven KPI board showing high/medium/low risk point counts, cluster stats, vehicle type breakdown, and top dangerous districts from ML output data.",
-    color: "#1B5E20",
-    bgColor: "#E8F5E9",
-    border: "#A5D6A7",
+    accent: "#34d399",
   },
   {
     path: "/risk-map",
     icon: "🗾",
     title: "Collision Risk Map",
-    desc: "Interactive map of all wildlife-vehicle collision incidents loaded from CSV. Filter by vehicle type, risk level, and toggle DBSCAN cluster centers. Switch between normal, satellite, and dark basemaps.",
-    color: "#4A148C",
-    bgColor: "#F3E5F5",
-    border: "#CE93D8",
+    desc: "Interactive map of all wildlife-vehicle collision incidents loaded from CSV. Filter by vehicle type, risk level, and toggle DBSCAN cluster centers. Switch between basemaps.",
+    accent: "#60a5fa",
   },
   {
     path: "/risk-prediction",
     icon: "🧮",
     title: "District Risk Predictor",
     desc: "Select a district and enter environmental parameters (rainfall, NDVI, water/forest distances) to get an AI-predicted wildlife collision risk score and level.",
-    color: "#01579B",
-    bgColor: "#E1F5FE",
-    border: "#81D4FA",
+    accent: "#818cf8",
   },
   {
     path: "/avc-home",
     icon: "🌿",
     title: "AVC Platform Home",
     desc: "Overview of the AI-Smart Animal Vehicle Collision Predictor platform — mission, stats, and feature highlights for the Sri Lanka wildlife safety initiative.",
-    color: "#2E7D32",
-    bgColor: "#F1F8E9",
-    border: "#C5E1A5",
+    accent: "#34d399",
   },
 ];
+
+const G = {
+  bg: "#0a0e14",
+  card: "rgba(255,255,255,0.06)",
+  border: "rgba(255,255,255,0.10)",
+  shadow: "0 8px 32px rgba(0,0,0,0.4)",
+  textPrimary: "#f9fafb",
+  textSecondary: "rgba(255,255,255,0.65)",
+  textMuted: "rgba(255,255,255,0.38)",
+  emerald: "#10b981",
+  emeraldLight: "#34d399",
+};
 
 function StatCard({ icon, label, value, sub, color }) {
   return (
     <div style={{
-      backgroundColor: "white",
-      borderRadius: "12px",
-      padding: "20px 24px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-      borderLeft: `4px solid ${color}`,
+      background: "rgba(255,255,255,0.06)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      borderRadius: "16px",
+      padding: "20px 22px",
+      border: "1px solid rgba(255,255,255,0.10)",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+      borderLeft: `3px solid ${color}`,
       minWidth: 0,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span style={{ fontSize: "32px" }}>{icon}</span>
+      transition: "transform 0.2s, box-shadow 0.2s",
+    }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.5)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.35)"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <span style={{ fontSize: "30px" }}>{icon}</span>
         <div>
-          <div style={{ fontSize: "28px", fontWeight: "700", color, lineHeight: 1.1 }}>{value ?? "—"}</div>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "#333", marginTop: "2px" }}>{label}</div>
-          {sub && <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>{sub}</div>}
+          <div style={{ fontSize: "28px", fontWeight: "800", color, lineHeight: 1.1, letterSpacing: "-1px" }}>{value ?? "—"}</div>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: G.textPrimary, marginTop: "3px" }}>{label}</div>
+          {sub && <div style={{ fontSize: "11px", color: G.textMuted, marginTop: "2px" }}>{sub}</div>}
         </div>
       </div>
     </div>
@@ -112,13 +114,13 @@ function StatCard({ icon, label, value, sub, color }) {
 function DangerBar({ label, count, total, color }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-        <span style={{ fontSize: "13px", fontWeight: "600", color: "#444" }}>{label}</span>
+    <div style={{ marginBottom: "14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+        <span style={{ fontSize: "13px", fontWeight: "600", color: G.textSecondary }}>{label}</span>
         <span style={{ fontSize: "13px", fontWeight: "700", color }}>{count} ({pct.toFixed(0)}%)</span>
       </div>
-      <div style={{ backgroundColor: "#f0f0f0", borderRadius: "6px", height: "10px", overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, height: "100%", backgroundColor: color, borderRadius: "6px", transition: "width 0.6s ease" }} />
+      <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: "8px", height: "8px", overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${color}, ${color}99)`, borderRadius: "8px", transition: "width 0.6s ease" }} />
       </div>
     </div>
   );
@@ -153,42 +155,62 @@ export default function DashboardPage() {
   const top5           = summary?.top_5_dangerous ?? [];
 
   const dangerBadge = (level) => {
-    const map = { High: { color: "#d32f2f", bg: "#ffebee", icon: "🔴" }, Medium: { color: "#f57c00", bg: "#fff3e0", icon: "🟠" }, Low: { color: "#388e3c", bg: "#e8f5e9", icon: "🟡" } };
-    return map[level] ?? { color: "#757575", bg: "#f5f5f5", icon: "⚪" };
+    const map = {
+      High:   { color: "#ef4444", bg: "rgba(239,68,68,0.15)",   icon: "🔴" },
+      Medium: { color: "#f59e0b", bg: "rgba(245,158,11,0.15)",  icon: "🟠" },
+      Low:    { color: "#10b981", bg: "rgba(16,185,129,0.15)",  icon: "🟡" },
+    };
+    return map[level] ?? { color: "#6b7280", bg: "rgba(107,114,128,0.15)", icon: "⚪" };
   };
 
   return (
-    <div style={{ minHeight: "calc(100vh - 60px)", backgroundColor: "#f4f6fb", paddingBottom: "40px" }}>
+    <div style={{ minHeight: "calc(100vh - 60px)", background: `linear-gradient(135deg, ${G.bg} 0%, #064e3b22 50%, ${G.bg} 100%)`, paddingBottom: "48px", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
       {/* Hero */}
       <div style={{
-        background: "linear-gradient(135deg, #0d1b5e 0%, #1a237e 50%, #283593 100%)",
-        color: "white",
-        padding: "48px 40px 40px",
+        background: "linear-gradient(135deg, #0a0e14 0%, #064e3b 50%, #0a0e14 100%)",
+        padding: "56px 40px 48px",
         textAlign: "center",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        position: "relative",
+        overflow: "hidden",
       }}>
-        <div style={{ fontSize: "56px", marginBottom: "12px" }}>🐘</div>
-        <h1 style={{ margin: "0 0 10px 0", fontSize: "30px", fontWeight: "700", letterSpacing: "0.3px" }}>
-          AI-Driven Wildlife Conflict Prediction
-        </h1>
-        <p style={{ margin: "0 auto", maxWidth: "600px", fontSize: "15px", opacity: 0.8, lineHeight: 1.6 }}>
-          An intelligent framework for elephant movement analysis, conflict hotspot detection, corridor mapping, and road-crossing risk assessment across Sri Lanka.
-        </p>
-        {apiError && (
-          <div style={{ marginTop: "16px", display: "inline-block", backgroundColor: "rgba(255,80,80,0.25)", border: "1px solid rgba(255,80,80,0.5)", borderRadius: "8px", padding: "8px 20px", fontSize: "13px" }}>
-            ⚠️ API server not reachable — start it with <code style={{ backgroundColor: "rgba(255,255,255,0.15)", padding: "2px 6px", borderRadius: "4px" }}>python run.py</code>
-          </div>
-        )}
+        {/* Background glow */}
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "600px", height: "300px", background: "radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: "64px", marginBottom: "16px", animation: "none" }}>🐘</div>
+          <h1 style={{
+            margin: "0 0 12px 0",
+            fontSize: "32px",
+            fontWeight: "800",
+            letterSpacing: "-0.5px",
+            background: "linear-gradient(135deg, #ffffff 0%, #34d399 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>
+            AI-Driven Wildlife Conflict Prediction
+          </h1>
+          <p style={{ margin: "0 auto", maxWidth: "580px", fontSize: "15px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
+            An intelligent framework for elephant movement analysis, conflict hotspot detection, corridor mapping, and road-crossing risk assessment across Sri Lanka.
+          </p>
+          {apiError && (
+            <div style={{ marginTop: "20px", display: "inline-block", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "10px", padding: "10px 22px", fontSize: "13px", color: "#f87171" }}>
+              ⚠️ API server not reachable — start it with{" "}
+              <code style={{ background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: "4px" }}>python run.py</code>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 24px" }}>
 
         {/* Stat Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "-24px", marginBottom: "32px" }}>
-          <StatCard icon="🐘" label="Hotspot Zones" value={totalNodes} sub="DBSCAN clusters" color="#1565C0" />
-          <StatCard icon="🛤️" label="Corridors" value={totalCorridors} sub="Movement paths" color="#6A1B9A" />
-          <StatCard icon="🚗" label="Road Crossings" value={totalCrossings} sub="Corridor ✕ road intersections" color="#B71C1C" />
-          <StatCard icon="⚠️" label="High Danger" value={dangerCounts.High ?? 0} sub="Critical road crossings" color="#d32f2f" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "-28px", marginBottom: "36px", position: "relative", zIndex: 2 }}>
+          <StatCard icon="🐘" label="Hotspot Zones"  value={totalNodes}     sub="DBSCAN clusters"               color="#34d399" />
+          <StatCard icon="🛤️" label="Corridors"      value={totalCorridors} sub="Movement paths"                color="#a78bfa" />
+          <StatCard icon="🚗" label="Road Crossings" value={totalCrossings} sub="Corridor × road intersections" color="#60a5fa" />
+          <StatCard icon="⚠️" label="High Danger"    value={dangerCounts.High ?? 0} sub="Critical road crossings" color="#ef4444" />
         </div>
 
         {/* Main content grid */}
@@ -196,34 +218,38 @@ export default function DashboardPage() {
 
           {/* Feature cards */}
           <div>
-            <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1a237e", margin: "0 0 16px 0" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: G.textPrimary, margin: "0 0 18px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Activity size={18} color="#10b981" />
               System Features
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
               {FEATURES.map(f => (
                 <Link key={f.path} to={f.path} style={{ textDecoration: "none" }}>
                   <div style={{
-                    backgroundColor: "white",
-                    borderRadius: "12px",
+                    background: G.card,
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    borderRadius: "16px",
                     padding: "20px",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
-                    border: `1px solid ${f.border}`,
-                    transition: "transform 0.2s, box-shadow 0.2s",
+                    border: `1px solid ${G.border}`,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                    transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s",
                     cursor: "pointer",
                     height: "100%",
-                    boxSizing: "border-box"
+                    boxSizing: "border-box",
+                    borderTop: `2px solid ${f.accent}`,
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.12)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.07)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(0,0,0,0.5)"; e.currentTarget.style.borderColor = f.accent; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.borderColor = G.border; }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                      <div style={{ width: "40px", height: "40px", backgroundColor: f.bgColor, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>
+                      <div style={{ width: "38px", height: "38px", background: `${f.accent}18`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0, border: `1px solid ${f.accent}30` }}>
                         {f.icon}
                       </div>
-                      <span style={{ fontSize: "14px", fontWeight: "700", color: f.color }}>{f.title}</span>
+                      <span style={{ fontSize: "13px", fontWeight: "700", color: f.accent }}>{f.title}</span>
                     </div>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#666", lineHeight: "1.6" }}>{f.desc}</p>
-                    <div style={{ marginTop: "12px", fontSize: "12px", color: f.color, fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <p style={{ margin: 0, fontSize: "12px", color: G.textMuted, lineHeight: "1.65" }}>{f.desc}</p>
+                    <div style={{ marginTop: "12px", fontSize: "12px", color: f.accent, fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>
                       Open page →
                     </div>
                   </div>
@@ -233,37 +259,72 @@ export default function DashboardPage() {
           </div>
 
           {/* Right column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
             {/* Danger breakdown */}
-            <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" }}>
-              <h3 style={{ margin: "0 0 16px 0", fontSize: "15px", fontWeight: "700", color: "#333" }}>
-                🚗 Road Crossing Danger
+            <div style={{
+              background: G.card,
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              borderRadius: "16px",
+              padding: "22px",
+              border: `1px solid ${G.border}`,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+            }}>
+              <h3 style={{ margin: "0 0 18px 0", fontSize: "14px", fontWeight: "700", color: G.textPrimary, display: "flex", alignItems: "center", gap: "7px" }}>
+                <Car size={15} color="#ef4444" />
+                Road Crossing Danger
               </h3>
-              <DangerBar label="🔴 High"   count={dangerCounts.High   ?? 0} total={totalCrossings} color="#d32f2f" />
-              <DangerBar label="🟠 Medium" count={dangerCounts.Medium ?? 0} total={totalCrossings} color="#f57c00" />
-              <DangerBar label="🟡 Low"    count={dangerCounts.Low    ?? 0} total={totalCrossings} color="#fbc02d" />
-              <Link to="/road-crossings" style={{ display: "block", marginTop: "14px", textAlign: "center", backgroundColor: "#B71C1C", color: "white", padding: "9px", borderRadius: "7px", fontSize: "13px", fontWeight: "600", textDecoration: "none" }}>
+              <DangerBar label="🔴 High"   count={dangerCounts.High   ?? 0} total={totalCrossings} color="#ef4444" />
+              <DangerBar label="🟠 Medium" count={dangerCounts.Medium ?? 0} total={totalCrossings} color="#f59e0b" />
+              <DangerBar label="🟡 Low"    count={dangerCounts.Low    ?? 0} total={totalCrossings} color="#fbbf24" />
+              <Link to="/road-crossings" style={{
+                display: "block", marginTop: "16px", textAlign: "center",
+                background: "linear-gradient(135deg, #991b1b, #b91c1c)",
+                color: "white", padding: "10px", borderRadius: "10px",
+                fontSize: "13px", fontWeight: "600", textDecoration: "none",
+                boxShadow: "0 4px 12px rgba(239,68,68,0.25)",
+                transition: "opacity 0.2s",
+              }}>
                 View All Crossings →
               </Link>
             </div>
 
             {/* Top 5 dangerous */}
             {top5.length > 0 && (
-              <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" }}>
-                <h3 style={{ margin: "0 0 14px 0", fontSize: "15px", fontWeight: "700", color: "#333" }}>
-                  ⚠️ Top 5 Dangerous Crossings
+              <div style={{
+                background: G.card,
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                borderRadius: "16px",
+                padding: "22px",
+                border: `1px solid ${G.border}`,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+              }}>
+                <h3 style={{ margin: "0 0 16px 0", fontSize: "14px", fontWeight: "700", color: G.textPrimary, display: "flex", alignItems: "center", gap: "7px" }}>
+                  <AlertTriangle size={15} color="#f59e0b" />
+                  Top 5 Dangerous Crossings
                 </h3>
                 {top5.map((c, i) => {
                   const b = dangerBadge(c.danger_level);
                   return (
-                    <div key={i} style={{ padding: "10px", backgroundColor: i % 2 === 0 ? "#fafafa" : "white", borderRadius: "6px", marginBottom: "6px", fontSize: "12px", borderLeft: `3px solid ${b.color}` }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontWeight: "600", color: "#333" }}>Corridor {c.corridor_id}</span>
-                        <span style={{ backgroundColor: b.bg, color: b.color, padding: "1px 7px", borderRadius: "10px", fontWeight: "700", fontSize: "11px" }}>{b.icon} {c.danger_level}</span>
+                    <div key={i} style={{
+                      padding: "12px",
+                      background: "rgba(255,255,255,0.04)",
+                      borderRadius: "10px",
+                      marginBottom: "8px",
+                      fontSize: "12px",
+                      borderLeft: `3px solid ${b.color}`,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                        <span style={{ fontWeight: "600", color: G.textPrimary }}>Corridor {c.corridor_id}</span>
+                        <span style={{ background: b.bg, color: b.color, padding: "2px 8px", borderRadius: "10px", fontWeight: "700", fontSize: "11px", border: `1px solid ${b.color}30` }}>
+                          {b.icon} {c.danger_level}
+                        </span>
                       </div>
-                      <div style={{ color: "#666", lineHeight: 1.6 }}>
+                      <div style={{ color: G.textMuted, lineHeight: 1.6 }}>
                         <span>{c.road_type} · Score: <strong style={{ color: b.color }}>{c.danger_score.toFixed(0)}</strong></span><br />
-                        <span>🌙 Night: {(c.night_ratio * 100).toFixed(0)}% · 🌿 Season: {c.peak_season}</span>
+                        <span>🌙 Night: {(c.night_ratio * 100).toFixed(0)}% · 🌿 {c.peak_season}</span>
                       </div>
                     </div>
                   );
@@ -272,27 +333,35 @@ export default function DashboardPage() {
             )}
 
             {/* System info */}
-            <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: "15px", fontWeight: "700", color: "#333" }}>
-                ⚙️ System Info
+            <div style={{
+              background: G.card,
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              borderRadius: "16px",
+              padding: "22px",
+              border: `1px solid ${G.border}`,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+            }}>
+              <h3 style={{ margin: "0 0 14px 0", fontSize: "14px", fontWeight: "700", color: G.textPrimary, display: "flex", alignItems: "center", gap: "7px" }}>
+                <Cpu size={15} color="#34d399" />
+                System Info
               </h3>
-              <div style={{ fontSize: "12px", color: "#555", lineHeight: 2 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>ML Model</span><span style={{ fontWeight: "600" }}>XGBoost</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Clustering</span><span style={{ fontWeight: "600" }}>DBSCAN · 0.5 km radius</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Distance Metric</span><span style={{ fontWeight: "600" }}>Haversine</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Study Region</span><span style={{ fontWeight: "600" }}>Sri Lanka</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ fontSize: "12px", color: G.textSecondary, lineHeight: 1 }}>
+                {[
+                  ["ML Model",         "XGBoost"],
+                  ["Clustering",       "DBSCAN · 0.5 km radius"],
+                  ["Distance Metric",  "Haversine"],
+                  ["Study Region",     "Sri Lanka"],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span>{k}</span>
+                    <span style={{ fontWeight: "600", color: G.textPrimary }}>{v}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "9px 0" }}>
                   <span>API Status</span>
-                  <span style={{ fontWeight: "600", color: apiError ? "#d32f2f" : "#388e3c" }}>
-                    {loading ? "Checking..." : apiError ? "Offline" : "✅ Online"}
+                  <span style={{ fontWeight: "600", color: apiError ? "#ef4444" : "#10b981" }}>
+                    {loading ? "Checking…" : apiError ? "⚠️ Offline" : "✅ Online"}
                   </span>
                 </div>
               </div>

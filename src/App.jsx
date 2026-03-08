@@ -1,5 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import './App.css';
+import './Components/Tharushi/src/index.css';
+import './Kavindu/src/App.css';
 
 // ── Core layout ──────────────────────────────
 import Header               from './Header';
@@ -22,6 +24,39 @@ import HimashiDistrictDetails from './Himashi/HimashiDistrictDetails'; // /distr
 import HimashiTopDistricts    from './Himashi/HimashiTopDistricts';    // /top-districts
 import HimashiRiskSummary     from './Himashi/HimashiRiskSummary';     // /risk-summary
 import HimashiRiskLocations   from './Himashi/HimashiRiskLocations';   // /risk-locations
+
+// ── Tharushi (ELESAFE) pages ──────────────────
+import { AppProvider, useApp } from './Components/Tharushi/src/context/AppContext';
+import TharushiLogin        from './Components/Tharushi/src/pages/Login';          // /tharushi/login
+import TharushiDashboard    from './Components/Tharushi/src/pages/Dashboard';      // /tharushi/dashboard
+import TharushiPredict      from './Components/Tharushi/src/pages/RiskPrediction'; // /tharushi/predict
+import TharushiMapCalendar  from './Components/Tharushi/src/pages/MapCalendar';    // /tharushi/map-calendar
+import TharushiHistorical   from './Components/Tharushi/src/pages/Historical';     // /tharushi/historical
+
+// ── Kavindu (Wildlife Command Center) pages ───
+import KavinduLayout           from './Kavindu/src/components/Layout';              // /kavindu layout
+import KavinduProtectedRoute   from './Kavindu/src/components/ProtectedRoute';      // auth guard
+import KavinduHome             from './Kavindu/src/pages/Home';                     // /kavindu
+import KavinduPredictionDash   from './Kavindu/src/pages/PredictionDashboard';      // /kavindu/dashboard
+import KavinduHotspotRanking   from './Kavindu/src/pages/HotspotRanking';           // /kavindu/hotspots
+import KavinduReport           from './Kavindu/src/pages/Report';                   // /kavindu/report
+import KavinduOfficerLogin     from './Kavindu/src/pages/OfficerLogin';             // /kavindu/officer/login
+import KavinduOfficerDashboard from './Kavindu/src/pages/OfficerDashboard';         // /kavindu/officer/dashboard
+import KavinduAdminPanel       from './Kavindu/src/pages/AdminPanel';               // /kavindu/admin
+
+function TharushiLayout() {
+  return <AppProvider><Outlet /></AppProvider>;
+}
+
+function TharushiProtected({ children }) {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? children : <Navigate to="/tharushi/login" replace />;
+}
+
+function TharushiPublic({ children }) {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? <Navigate to="/tharushi/dashboard" replace /> : children;
+}
 
 function App() {
   return (
@@ -47,6 +82,27 @@ function App() {
           <Route path="/top-districts"     element={<HimashiTopDistricts />} />
           <Route path="/risk-summary"       element={<HimashiRiskSummary />} />
           <Route path="/risk-locations"     element={<HimashiRiskLocations />} />
+
+          {/* ── Tharushi (ELESAFE) routes ── */}
+          <Route path="/tharushi" element={<TharushiLayout />}>
+            <Route index                element={<Navigate to="dashboard" replace />} />
+            <Route path="login"         element={<TharushiPublic><TharushiLogin /></TharushiPublic>} />
+            <Route path="dashboard"     element={<TharushiProtected><TharushiDashboard /></TharushiProtected>} />
+            <Route path="predict"       element={<TharushiProtected><TharushiPredict /></TharushiProtected>} />
+            <Route path="map-calendar"  element={<TharushiProtected><TharushiMapCalendar /></TharushiProtected>} />
+            <Route path="historical"    element={<TharushiProtected><TharushiHistorical /></TharushiProtected>} />
+          </Route>
+
+          {/* ── Kavindu (Wildlife Command Center) routes ── */}
+          <Route path="/kavindu" element={<KavinduLayout />}>
+            <Route index element={<KavinduHome />} />
+            <Route path="dashboard"        element={<KavinduProtectedRoute><KavinduPredictionDash /></KavinduProtectedRoute>} />
+            <Route path="hotspots"         element={<KavinduProtectedRoute><KavinduHotspotRanking /></KavinduProtectedRoute>} />
+            <Route path="report"           element={<KavinduReport />} />
+            <Route path="officer/login"    element={<KavinduOfficerLogin />} />
+            <Route path="officer/dashboard" element={<KavinduProtectedRoute><KavinduOfficerDashboard /></KavinduProtectedRoute>} />
+            <Route path="admin"            element={<KavinduProtectedRoute requiredRole="admin"><KavinduAdminPanel /></KavinduProtectedRoute>} />
+          </Route>
         </Routes>
       </div>
     </Router>
