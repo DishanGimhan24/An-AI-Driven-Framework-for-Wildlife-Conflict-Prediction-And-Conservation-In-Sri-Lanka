@@ -1,9 +1,18 @@
 import "./HimashiSidebar.css";
 import { NavLink } from "react-router-dom";
+import { BarChart3, Map, Brain } from "lucide-react";
 
 export default function HimashiSidebar() {
   return (
     <aside className="sidebar">
+      <div className="sidebar__header">
+        <div className="sidebar__logo-icon">🐘</div>
+        <div className="sidebar__logo-text">
+          <h2>Wildlife Guard</h2>
+          <span>Command Center</span>
+        </div>
+      </div>
+
       <div className="sidebar__user">
         <img
           className="sidebar__avatar"
@@ -25,6 +34,7 @@ export default function HimashiSidebar() {
             "sidebar__link" + (isActive ? " active" : "")
           }
         >
+          <BarChart3 size={18} />
           Overview
         </NavLink>
 
@@ -34,6 +44,7 @@ export default function HimashiSidebar() {
             "sidebar__link" + (isActive ? " active" : "")
           }
         >
+          <Map size={18} />
           Risk Map
         </NavLink>
 
@@ -43,6 +54,7 @@ export default function HimashiSidebar() {
             "sidebar__link" + (isActive ? " active" : "")
           }
         >
+          <Brain size={18} />
           Prediction
         </NavLink>
       </nav>
