@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { logout } from '../api/authAPI';
+import { logout } from '../../api/authAPI';
 import { useApp } from '../../context/AppContext';
 
 export default function Navbar() {
