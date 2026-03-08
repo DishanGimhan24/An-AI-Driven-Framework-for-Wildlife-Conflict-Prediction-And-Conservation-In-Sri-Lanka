@@ -20,7 +20,7 @@ export default function OfficerLogin() {
       });
       localStorage.setItem("officer_token", response.data.token);
       localStorage.setItem("officer_user", JSON.stringify(response.data.user));
-      nav("/officer/dashboard");
+      nav("/kavindu/officer/dashboard");
     } catch (e) {
       setError(e.response?.data?.detail || e.message);
     } finally {

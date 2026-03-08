@@ -148,7 +148,7 @@ export default function Home() {
           <h2>Community Reporting</h2>
           <p>Report illegal poaching or wildlife offences. Quick and simple. Your report helps protect wildlife.</p>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-            <Link className="home-card-btn" to="/report" style={{ width: "100%" }}>Make a Report</Link>
+            <Link className="home-card-btn" to="/kavindu/report" style={{ width: "100%" }}>Make a Report</Link>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#4ade80", background: "rgba(74, 222, 128, 0.1)", border: "1px solid rgba(74, 222, 128, 0.2)", padding: "8px 16px", borderRadius: "20px", fontSize: "0.9rem", fontWeight: "600" }}>
               <ShieldCheck size={16} />
               100% Anonymous Guarantee

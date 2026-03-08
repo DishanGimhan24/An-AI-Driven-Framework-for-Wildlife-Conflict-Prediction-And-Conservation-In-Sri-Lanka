@@ -12,23 +12,23 @@ export default function Layout() {
   const handleLogout = () => {
     localStorage.removeItem("officer_token");
     localStorage.removeItem("officer_user");
-    navigate("/");
+    navigate("/kavindu");
   };
 
   const navItems = [
-    { to: "/", icon: Home, label: "Home" },
-    { to: "/report", icon: FileText, label: "Public Report" },
+    { to: "/kavindu", icon: Home, label: "Home" },
+    { to: "/kavindu/report", icon: FileText, label: "Public Report" },
   ];
 
   if (isOfficer) {
-    navItems.push({ to: "/dashboard", icon: BarChart3, label: "Prediction Dashboard" });
-    navItems.push({ to: "/hotspots", icon: Flame, label: "Hotspot Ranking" });
-    navItems.push({ to: "/officer/dashboard", icon: Shield, label: "Officer Portal" });
+    navItems.push({ to: "/kavindu/dashboard", icon: BarChart3, label: "Prediction Dashboard" });
+    navItems.push({ to: "/kavindu/hotspots", icon: Flame, label: "Hotspot Ranking" });
+    navItems.push({ to: "/kavindu/officer/dashboard", icon: Shield, label: "Officer Portal" });
     if (isAdmin) {
-      navItems.push({ to: "/admin", icon: Settings, label: "Admin Panel" });
+      navItems.push({ to: "/kavindu/admin", icon: Settings, label: "Admin Panel" });
     }
   } else {
-    navItems.push({ to: "/officer/login", icon: Shield, label: "Officer Login" });
+    navItems.push({ to: "/kavindu/officer/login", icon: Shield, label: "Officer Login" });
   }
 
   return (
