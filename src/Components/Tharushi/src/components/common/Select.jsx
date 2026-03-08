@@ -1,7 +1,7 @@
-export default function Select({ 
-  label, 
-  value, 
-  onChange, 
+export default function Select({
+  label,
+  value,
+  onChange,
   options = [],
   placeholder = 'Select an option',
   required = false,
@@ -10,11 +10,11 @@ export default function Select({
   className = ''
 }) {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div style={{ marginBottom: '16px' }} className={className}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#d1d5db', marginBottom: '8px' }}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span style={{ color: '#f87171', marginLeft: '4px' }}>*</span>}
         </label>
       )}
       <select
@@ -22,19 +22,18 @@ export default function Select({
         onChange={onChange}
         required={required}
         disabled={disabled}
-        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+        className="glass-input"
+        style={{ borderColor: error ? 'rgba(239,68,68,0.6)' : undefined }}
       >
-        <option value="">{placeholder}</option>
+        <option value="" style={{ background: '#111827', color: '#e5e7eb' }}>{placeholder}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} style={{ background: '#111827', color: '#e5e7eb' }}>
             {option.label}
           </option>
         ))}
       </select>
       {error && (
-        <p className="mt-1 text-sm text-red-500">{error}</p>
+        <p style={{ marginTop: '6px', fontSize: '13px', color: '#f87171' }}>{error}</p>
       )}
     </div>
   );

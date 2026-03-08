@@ -1,26 +1,43 @@
-export default function Button({ 
-  children, 
-  onClick, 
-  type = 'button', 
-  variant = 'primary', 
+import { Loader2 } from 'lucide-react';
+
+export default function Button({
+  children,
+  onClick,
+  type = 'button',
+  variant = 'primary',
   size = 'md',
   disabled = false,
   loading = false,
-  className = '' 
+  className = ''
 }) {
-  const baseClasses = 'font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
-  
-  const variants = {
-    primary: 'bg-primary text-white hover:bg-green-700 active:bg-green-800',
-    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400',
-    danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
-    outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white'
+  const variantStyle = {
+    primary: {
+      background: 'linear-gradient(135deg, var(--emerald-600) 0%, var(--emerald-700) 100%)',
+      color: 'white',
+      border: 'none',
+      boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+    },
+    secondary: {
+      background: 'rgba(255,255,255,0.08)',
+      color: '#d1d5db',
+      border: '1px solid rgba(255,255,255,0.18)',
+    },
+    danger: {
+      background: 'rgba(239,68,68,0.15)',
+      color: '#fca5a5',
+      border: '1px solid rgba(239,68,68,0.4)',
+    },
+    outline: {
+      background: 'transparent',
+      color: 'var(--emerald-400)',
+      border: '2px solid var(--emerald-600)',
+    },
   };
-  
-  const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg'
+
+  const sizeStyle = {
+    sm: { padding: '6px 14px', fontSize: '13px' },
+    md: { padding: '10px 20px', fontSize: '15px' },
+    lg: { padding: '14px 28px', fontSize: '16px' },
   };
 
   return (
@@ -28,14 +45,17 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`btn-emerald ${className}`}
+      style={{
+        ...variantStyle[variant],
+        ...sizeStyle[size],
+        opacity: disabled || loading ? 0.6 : 1,
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+      }}
     >
       {loading ? (
-        <span className="flex items-center gap-2">
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
           Loading...
         </span>
       ) : children}

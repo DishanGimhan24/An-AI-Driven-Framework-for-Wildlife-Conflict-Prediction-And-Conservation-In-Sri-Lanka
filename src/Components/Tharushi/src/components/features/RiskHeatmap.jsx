@@ -161,10 +161,10 @@ export default function RiskHeatmap({ districtData, viewMode = 'district', selec
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-125">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 border-4 border-t-4 border-gray-200 rounded-full animate-spin border-t-primary"></div>
-          <p className="text-gray-600">Loading map...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '500px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--emerald-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading map...</p>
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function RiskHeatmap({ districtData, viewMode = 'district', selec
   const filteredData = getFilteredGeoJSON();
 
   return (
-    <div className="relative overflow-hidden rounded-lg shadow-md h-125">
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px', height: '500px' }}>
       <MapContainer 
         center={[7.8731, 80.7718]} 
         zoom={viewMode === 'city' ? 10 : 8}
@@ -197,57 +197,39 @@ export default function RiskHeatmap({ districtData, viewMode = 'district', selec
       </MapContainer>
 
       {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white p-3 rounded-lg shadow-lg z-[1000]">
-        <h4 className="mb-2 text-sm font-semibold">Risk Level</h4>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EF4444' }} />
-            <span className="text-xs">High Risk</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }} />
-            <span className="text-xs">Medium Risk</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }} />
-            <span className="text-xs">Low Risk</span>
-          </div>
+      <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.18)', padding: '12px', borderRadius: '10px', zIndex: 1000 }}>
+        <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#d1d5db', marginBottom: '8px' }}>Risk Level</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {[['#EF4444', 'High Risk'], ['#F59E0B', 'Medium Risk'], ['#10B981', 'Low Risk']].map(([color, label]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '4px', backgroundColor: color }} />
+              <span style={{ fontSize: '12px', color: '#9ca3af' }}>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Summary Stats */}
       {districtData?.summary && (
-        <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg z-[1000] max-w-[200px]">
-          <h4 className="mb-2 text-xs font-semibold text-gray-700">
+        <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.18)', padding: '12px', borderRadius: '10px', zIndex: 1000, maxWidth: '180px' }}>
+          <h4 style={{ fontSize: '11px', fontWeight: 700, color: '#d1d5db', marginBottom: '8px' }}>
             {viewMode === 'city' ? 'City Summary' : 'District Summary'}
           </h4>
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="text-red-600">High Risk:</span>
-              <span className="font-semibold">
-                {districtData.summary.high_risk_cities || districtData.summary.high_risk_districts || 0}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-yellow-600">Medium Risk:</span>
-              <span className="font-semibold">
-                {districtData.summary.medium_risk_cities || districtData.summary.medium_risk_districts || 0}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-green-600">Low Risk:</span>
-              <span className="font-semibold">
-                {districtData.summary.low_risk_cities || districtData.summary.low_risk_districts || 0}
-              </span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+            {[['#ef4444', 'High Risk:', 'high_risk_cities', 'high_risk_districts'], ['#f59e0b', 'Medium Risk:', 'medium_risk_cities', 'medium_risk_districts'], ['#10b981', 'Low Risk:', 'low_risk_cities', 'low_risk_districts']].map(([color, label, k1, k2]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                <span style={{ color }}>{label}</span>
+                <span style={{ fontWeight: 700, color: '#d1d5db' }}>{districtData.summary[k1] || districtData.summary[k2] || 0}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Hover tooltip */}
       {selectedArea && (
-        <div className="absolute top-4 left-4 bg-white px-3 py-2 rounded-lg shadow-lg z-[1000]">
-          <p className="text-sm font-semibold text-gray-800">{selectedArea}</p>
+        <div style={{ position: 'absolute', top: '16px', left: '16px', background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.18)', padding: '8px 14px', borderRadius: '10px', zIndex: 1000 }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#d1d5db', margin: 0 }}>{selectedArea}</p>
         </div>
       )}
     </div>

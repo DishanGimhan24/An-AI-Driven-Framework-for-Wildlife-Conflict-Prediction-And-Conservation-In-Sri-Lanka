@@ -131,13 +131,13 @@ export default function CityRiskMap({ district, city, riskLevel, riskScore }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg shadow-md h-96">
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px', height: '384px' }}>
       {/* Loading overlay — MapContainer stays mounted */}
       {loading && (
-        <div className="absolute inset-0 z-[1001] flex items-center justify-center bg-white/70 rounded-lg">
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-4 border-4 border-t-4 border-gray-200 rounded-full animate-spin border-t-primary"></div>
-            <p className="text-gray-600">Loading map...</p>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,14,20,0.7)', backdropFilter: 'blur(4px)', borderRadius: '12px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--emerald-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+            <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading map...</p>
           </div>
         </div>
       )}
@@ -166,18 +166,13 @@ export default function CityRiskMap({ district, city, riskLevel, riskScore }) {
 
       {/* Legend */}
       {!loading && cityFeature && (
-        <div className="absolute bottom-4 right-4 bg-white p-3 rounded-lg shadow-lg z-[1000]">
-          <h4 className="mb-2 text-sm font-semibold">{city}</h4>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: getRiskColor(riskLevel) }}
-            />
-            <span className="text-xs font-medium">{riskLevel} Risk</span>
+        <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.18)', padding: '12px', borderRadius: '10px', zIndex: 1000 }}>
+          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#d1d5db', marginBottom: '8px' }}>{city}</h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <div style={{ width: '14px', height: '14px', borderRadius: '4px', backgroundColor: getRiskColor(riskLevel) }} />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#d1d5db' }}>{riskLevel} Risk</span>
           </div>
-          <p className="mt-1 text-xs text-gray-600">
-            Score: {Math.round(riskScore * 100)}%
-          </p>
+          <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Score: {Math.round(riskScore * 100)}%</p>
         </div>
       )}
     </div>

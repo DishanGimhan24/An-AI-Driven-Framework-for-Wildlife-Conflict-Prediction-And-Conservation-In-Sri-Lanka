@@ -4,58 +4,54 @@ import { getRiskColor, getRiskLevel } from '../../utils/riskUtils';
 export default function ForecastCalendar({ forecast }) {
   if (!forecast || !forecast.forecast) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div style={{ textAlign: 'center', padding: '32px', color: '#6b7280', fontSize: '14px' }}>
         No forecast data available
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+    <div>
+      <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#d1d5db', marginBottom: '20px' }}>
         7-Day Risk Forecast
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
         {forecast.forecast.map((day, index) => {
           const riskLevel = getRiskLevel(day.risk_score);
           const color = getRiskColor(riskLevel);
-          
+
           return (
-            <div 
+            <div
               key={index}
-              className="border-2 rounded-lg p-4 hover:shadow-lg transition-shadow"
-              style={{ borderColor: color }}
+              style={{
+                borderRadius: '14px',
+                padding: '16px',
+                background: 'rgba(255,255,255,0.05)',
+                border: `2px solid ${color}55`,
+                transition: 'box-shadow 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 4px 20px ${color}33`}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
             >
-              <div className="flex justify-between items-start mb-3">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div>
-                  <p className="text-sm text-gray-600">Day {day.day}</p>
-                  <p className="font-semibold text-gray-800">
-                    {formatDateDisplay(day.date)}
-                  </p>
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '3px' }}>Day {day.day}</p>
+                  <p style={{ fontWeight: 600, color: '#d1d5db', fontSize: '14px' }}>{formatDateDisplay(day.date)}</p>
                 </div>
-                <div 
-                  className="px-3 py-1 rounded-full text-white text-xs font-bold"
-                  style={{ backgroundColor: color }}
-                >
+                <div style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, color: '#fff', background: color }}>
                   {riskLevel}
                 </div>
               </div>
 
               {/* Risk Score Bar */}
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-gray-600 mb-1">
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
                   <span>Risk Score</span>
-                  <span>{Math.round(day.risk_score * 100)}%</span>
+                  <span style={{ color: color, fontWeight: 700 }}>{Math.round(day.risk_score * 100)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${day.risk_score * 100}%`,
-                      backgroundColor: color 
-                    }}
-                  />
+                <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: '4px', backgroundColor: color, width: `${day.risk_score * 100}%`, transition: 'width 0.4s ease' }} />
                 </div>
               </div>
             </div>

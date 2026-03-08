@@ -1,7 +1,24 @@
-export default function Card({ children, title, className = '', padding = 'p-6', shadow = 'shadow-md' }) {
+export default function Card({ children, title, className = '', padding = '', shadow = '' }) {
   return (
-    <div className={`bg-white rounded-lg ${shadow} ${padding} ${className}`}>
-      {title && <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>}
+    <div
+      className={`glass-card ${className}`}
+      style={padding ? { padding } : undefined}
+    >
+      {title && (
+        <h3
+          style={{
+            fontSize: '18px',
+            fontWeight: 700,
+            color: 'var(--emerald-400)',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          {title}
+        </h3>
+      )}
       {children}
     </div>
   );

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
+import { Map, Calendar } from 'lucide-react';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import DatePicker from '../components/common/DatePicker';
@@ -16,6 +17,24 @@ import { useHeatmap } from '../hooks/useHeatmap';
 import { DISTRICT_COORDINATES } from '../utils/constants';
 import { getTodayDate } from '../utils/helpers';
 
+const TAB_STYLE_ACTIVE = {
+  padding: '10px 22px', borderRadius: '30px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', border: 'none',
+  background: 'linear-gradient(135deg, var(--emerald-500), var(--emerald-600))', color: '#fff',
+  boxShadow: '0 4px 14px rgba(16,185,129,0.3)',
+};
+const TAB_STYLE_INACTIVE = {
+  padding: '10px 22px', borderRadius: '30px', fontWeight: 500, fontSize: '14px', cursor: 'pointer',
+  background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: '#9ca3af',
+};
+const VIEW_BTN_ACTIVE = {
+  padding: '8px 18px', borderRadius: '20px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', border: 'none',
+  background: 'linear-gradient(135deg, var(--emerald-500), var(--emerald-600))', color: '#fff',
+};
+const VIEW_BTN_INACTIVE = {
+  padding: '8px 18px', borderRadius: '20px', fontWeight: 500, fontSize: '13px', cursor: 'pointer',
+  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#9ca3af',
+};
+
 export default function MapCalendar() {
   const [activeTab, setActiveTab] = useState('map');
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -23,71 +42,39 @@ export default function MapCalendar() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [calendarPredictions, setCalendarPredictions] = useState([]);
   const [viewMode, setViewMode] = useState('district');
-  
-  const { getForecast, loading: forecasting } = useForecast();
-  const { 
-    districtData, 
-    loading: loadingHeatmap, 
-    error: heatmapError, 
-    loadDistrictHeatmap 
-  } = useHeatmap();
-  
-  const {
-    cityHeatmapData,
-    loading: loadingCityHeatmap,
-    loadCityHeatmap
-  } = useCityHeatmap();
 
-  // Load district heatmap on mount
+  const { getForecast, loading: forecasting } = useForecast();
+  const { districtData, loading: loadingHeatmap, error: heatmapError, loadDistrictHeatmap } = useHeatmap();
+  const { cityHeatmapData, loading: loadingCityHeatmap, loadCityHeatmap } = useCityHeatmap();
+
   useEffect(() => {
     if (activeTab === 'map' && viewMode === 'district') {
       loadDistrictHeatmap(getTodayDate());
     }
   }, [activeTab, viewMode]);
 
-  // Load city heatmap when district changes
   useEffect(() => {
     if (activeTab === 'map' && viewMode === 'city' && selectedDistrict) {
       loadCityHeatmap(selectedDistrict, selectedDate);
     }
   }, [selectedDistrict, selectedDate, viewMode, activeTab]);
 
-  // Generate calendar forecast
   const handleGenerateCalendar = async () => {
-    if (!selectedDistrict) {
-      alert('Please select a district first');
-      return;
-    }
-
+    if (!selectedDistrict) { alert('Please select a district first'); return; }
     const coords = DISTRICT_COORDINATES[selectedDistrict];
-    
-    if (!coords || !coords.lat || !coords.lng) {
-      alert(`Coordinates not found for ${selectedDistrict}`);
-      return;
-    }
-    
+    if (!coords || !coords.lat || !coords.lng) { alert(`Coordinates not found for ${selectedDistrict}`); return; }
     const result = await getForecast(coords.lat, coords.lng, 30, selectedDate);
-    
     if (result && result.forecast) {
-      setCalendarPredictions(result.forecast.map(day => ({
-        date: day.date,
-        risk_score: day.risk_score,
-        risk_level: day.risk_level
-      })));
+      setCalendarPredictions(result.forecast.map(day => ({ date: day.date, risk_score: day.risk_score, risk_level: day.risk_level })));
     }
   };
 
-  // Reload heatmap with new date
   const handleDateChange = async (e) => {
     const newDate = e.target.value;
     setSelectedDate(newDate);
-    
     if (activeTab === 'map') {
-      if (viewMode === 'district') {
-        await loadDistrictHeatmap(newDate);
-      } else if (viewMode === 'city' && selectedDistrict) {
-        await loadCityHeatmap(selectedDistrict, newDate);
-      }
+      if (viewMode === 'district') await loadDistrictHeatmap(newDate);
+      else if (viewMode === 'city' && selectedDistrict) await loadCityHeatmap(selectedDistrict, newDate);
     }
   };
 
@@ -95,92 +82,43 @@ export default function MapCalendar() {
   const currentLoading = viewMode === 'city' ? loadingCityHeatmap : loadingHeatmap;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
       <Navbar />
-      
-      <div className="container flex-1 px-4 py-8 mx-auto">
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">
-          Risk Map & Calendar
-        </h1>
 
-        {/* Tabs */}
-        <div className="flex mb-6 space-x-4 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`pb-3 px-4 font-medium transition-colors ${
-              activeTab === 'map'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Risk Map
-          </button>
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className={`pb-3 px-4 font-medium transition-colors ${
-              activeTab === 'calendar'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Risk Calendar
-          </button>
+      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', padding: '32px 24px', width: '100%' }}>
+        <div style={{ marginBottom: '32px' }}>
+          <h1 className="page-title-gradient" style={{ fontSize: '2rem', marginBottom: '6px' }}>Risk Map &amp; Calendar</h1>
+          <p style={{ color: '#9ca3af', fontSize: '15px' }}>Visualize elephant conflict risk zones across Sri Lanka</p>
+        </div>
+
+        {/* Tab buttons */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '28px' }}>
+          <button style={activeTab === 'map' ? TAB_STYLE_ACTIVE : TAB_STYLE_INACTIVE} onClick={() => setActiveTab('map')}><span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Map size={16} /> Risk Map</span></button>
+          <button style={activeTab === 'calendar' ? TAB_STYLE_ACTIVE : TAB_STYLE_INACTIVE} onClick={() => setActiveTab('calendar')}><span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> Risk Calendar</span></button>
         </div>
 
         {/* Map Tab */}
         {activeTab === 'map' && (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* View Mode Toggle */}
             <Card>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">View Mode</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setViewMode('district')}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      viewMode === 'district'
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    District View
-                  </button>
-                  <button
-                    onClick={() => setViewMode('city')}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      viewMode === 'city'
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    City View
-                  </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#d1d5db' }}>View Mode</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button style={viewMode === 'district' ? VIEW_BTN_ACTIVE : VIEW_BTN_INACTIVE} onClick={() => setViewMode('district')}>District View</button>
+                  <button style={viewMode === 'city' ? VIEW_BTN_ACTIVE : VIEW_BTN_INACTIVE} onClick={() => setViewMode('city')}>City View</button>
                 </div>
               </div>
             </Card>
 
             {/* Controls */}
             <Card title="Map Settings">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <DatePicker
-                  label="Select Date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                />
-                
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                <DatePicker label="Select Date" value={selectedDate} onChange={handleDateChange} />
                 {viewMode === 'city' && (
                   <>
-                    <DistrictSelector
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
-                      label="Select District"
-                    />
-                    <CitySelector
-                      district={selectedDistrict}
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      label="Select City/Division"
-                    />
+                    <DistrictSelector value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} label="Select District" />
+                    <CitySelector district={selectedDistrict} value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} label="Select City/Division" />
                   </>
                 )}
               </div>
@@ -194,51 +132,37 @@ export default function MapCalendar() {
                 <ErrorMessage message={heatmapError} />
               ) : currentHeatmapData ? (
                 <>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold">
-                      {viewMode === 'city' ? `${selectedDistrict} - City Level Risk` : 'District Level Risk Map'}
+                  <div style={{ marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#d1d5db' }}>
+                      {viewMode === 'city' ? `${selectedDistrict} \u2013 City Level Risk` : 'District Level Risk Map'}
                     </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Date: {selectedDate}
-                    </p>
+                    <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>Date: {selectedDate}</p>
                   </div>
-                  <RiskHeatmap 
-                    districtData={currentHeatmapData}
-                    viewMode={viewMode}
-                  />
+                  <RiskHeatmap districtData={currentHeatmapData} viewMode={viewMode} />
                 </>
               ) : (
-                <div className="py-12 text-center text-gray-600">
+                <div style={{ textAlign: 'center', padding: '48px 0', color: '#6b7280', fontSize: '14px' }}>
                   {viewMode === 'city' ? 'Select a district to view city-level risks' : 'Loading map...'}
                 </div>
               )}
             </Card>
 
-            {/* Summary */}
+            {/* Risk Summary */}
             {currentHeatmapData && currentHeatmapData.summary && (
               <Card title="Risk Summary">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 text-center rounded-lg bg-red-50">
-                    <p className="text-2xl font-bold text-red-600">
-                      {currentHeatmapData.summary.high_risk_cities || 
-                       currentHeatmapData.summary.high_risk_districts || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">High Risk</p>
-                  </div>
-                  <div className="p-4 text-center rounded-lg bg-yellow-50">
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {currentHeatmapData.summary.medium_risk_cities || 
-                       currentHeatmapData.summary.medium_risk_districts || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Medium Risk</p>
-                  </div>
-                  <div className="p-4 text-center rounded-lg bg-green-50">
-                    <p className="text-2xl font-bold text-green-600">
-                      {currentHeatmapData.summary.low_risk_cities || 
-                       currentHeatmapData.summary.low_risk_districts || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Low Risk</p>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  {[
+                    { label: 'High Risk', key: 'high_risk_cities', key2: 'high_risk_districts', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' },
+                    { label: 'Medium Risk', key: 'medium_risk_cities', key2: 'medium_risk_districts', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+                    { label: 'Low Risk', key: 'low_risk_cities', key2: 'low_risk_districts', color: 'var(--emerald-400)', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+                  ].map(item => (
+                    <div key={item.label} style={{ textAlign: 'center', padding: '20px', borderRadius: '12px', background: item.bg, border: `1px solid ${item.border}` }}>
+                      <p style={{ fontSize: '2rem', fontWeight: 800, color: item.color }}>
+                        {currentHeatmapData.summary[item.key] || currentHeatmapData.summary[item.key2] || 0}
+                      </p>
+                      <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>{item.label}</p>
+                    </div>
+                  ))}
                 </div>
               </Card>
             )}
@@ -247,30 +171,17 @@ export default function MapCalendar() {
 
         {/* Calendar Tab */}
         {activeTab === 'calendar' && (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <Card title="Calendar Settings">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <DistrictSelector
-                  value={selectedDistrict}
-                  onChange={(e) => setSelectedDistrict(e.target.value)}
-                  label="Select District"
-                />
-                <DatePicker
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  label="Start Date"
-                  min={getTodayDate()}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                <DistrictSelector value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} label="Select District" />
+                <DatePicker value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} label="Start Date" min={getTodayDate()} />
               </div>
-              <Button
-                onClick={handleGenerateCalendar}
-                variant="primary"
-                className="w-full mt-4"
-                loading={forecasting}
-                disabled={!selectedDistrict || forecasting}
-              >
-                Generate 30-Day Calendar
-              </Button>
+              <div style={{ marginTop: '18px' }}>
+                <Button onClick={handleGenerateCalendar} variant="primary" style={{ width: '100%' }} loading={forecasting} disabled={!selectedDistrict || forecasting}>
+                  Generate 30-Day Calendar
+                </Button>
+              </div>
             </Card>
 
             {forecasting && <Loading message="Generating forecast..." />}
@@ -280,11 +191,21 @@ export default function MapCalendar() {
                 <MonthlyCalendar predictions={calendarPredictions} />
               </Card>
             )}
+
+            {!forecasting && calendarPredictions.length === 0 && (
+              <div className="glass-card" style={{ textAlign: 'center', padding: '48px 0', color: '#6b7280', fontSize: '15px' }}>
+                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center', color: '#4b5563' }}>
+                  <Calendar size={48} />
+                </div>
+                <p style={{ color: '#9ca3af' }}>Select a district and click &ldquo;Generate 30-Day Calendar&rdquo; to view forecast</p>
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </main>
 
       <Footer />
     </div>
   );
 }
+

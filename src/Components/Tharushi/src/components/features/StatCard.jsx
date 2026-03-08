@@ -1,39 +1,53 @@
+import { TrendingUp, TrendingDown } from 'lucide-react';
+
 export default function StatCard({ title, value, icon, color = 'primary', trend = null }) {
-  const colorClasses = {
-    primary: 'bg-green-50 text-primary',
-    danger: 'bg-red-50 text-red-600',
-    warning: 'bg-yellow-50 text-yellow-600',
-    info: 'bg-blue-50 text-blue-600'
-  };
+  const accentColor = {
+    primary: 'var(--emerald-500)',
+    danger: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6',
+  }[color] || 'var(--emerald-500)';
+
+  const bgAccent = {
+    primary: 'rgba(16,185,129,0.12)',
+    danger: 'rgba(239,68,68,0.12)',
+    warning: 'rgba(245,158,11,0.12)',
+    info: 'rgba(59,130,246,0.12)',
+  }[color] || 'rgba(16,185,129,0.12)';
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-800">{value}</p>
-          
+    <div
+      className="glass-card"
+      style={{ padding: '20px', borderTop: `3px solid ${accentColor}` }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '6px', fontWeight: 500 }}>{title}</p>
+          <p style={{ fontSize: '2.2rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>{value}</p>
+
           {trend && (
-            <div className="flex items-center mt-2 text-sm">
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', fontSize: '13px', gap: '4px' }}>
               {trend.direction === 'up' ? (
-                <svg className="h-4 w-4 text-red-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
+                <TrendingUp size={16} style={{ color: '#f87171' }} />
               ) : (
-                <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+                <TrendingDown size={16} style={{ color: 'var(--emerald-400)' }} />
               )}
-              <span className={trend.direction === 'up' ? 'text-red-600' : 'text-green-600'}>
-                {trend.value}
-              </span>
-              <span className="text-gray-600 ml-1">vs last month</span>
+              <span style={{ color: trend.direction === 'up' ? '#f87171' : 'var(--emerald-400)', fontWeight: 600 }}>{trend.value}</span>
+              <span style={{ color: '#9ca3af' }}>vs last month</span>
             </div>
           )}
         </div>
 
         {icon && (
-          <div className={`p-4 rounded-full ${colorClasses[color]}`}>
+          <div style={{
+            padding: '14px',
+            borderRadius: '14px',
+            background: bgAccent,
+            color: accentColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
             {icon}
           </div>
         )}

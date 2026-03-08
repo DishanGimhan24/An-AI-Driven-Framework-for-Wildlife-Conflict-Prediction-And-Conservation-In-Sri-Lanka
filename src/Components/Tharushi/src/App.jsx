@@ -93,18 +93,19 @@ function NotFound() {
   const { isLoggedIn } = useApp();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 className="page-title-gradient" style={{ fontSize: '5rem', fontWeight: 800, marginBottom: '16px' }}>404</h1>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#d1d5db', marginBottom: '16px' }}>
           Page Not Found
         </h2>
-        <p className="text-gray-600 mb-8">
-          The page you're looking for doesn't exist.
+        <p style={{ color: '#9ca3af', marginBottom: '32px' }}>
+          The page you&apos;re looking for doesn&apos;t exist.
         </p>
         <a
           href={isLoggedIn ? "/tharushi/dashboard" : "/tharushi/login"}
-          className="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+          className="btn-emerald"
+          style={{ display: 'inline-block', textDecoration: 'none', padding: '12px 28px', borderRadius: '10px' }}
         >
           {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
         </a>

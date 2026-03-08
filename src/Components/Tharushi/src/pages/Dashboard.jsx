@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { RefreshCw, AlertTriangle, Info, CheckCircle, BarChart3, Map, TrendingUp, MapPin } from 'lucide-react';
 import { getStats } from '../api/statsAPI';
 import { checkHealth } from '../api/systemAPI';
 import Card from '../components/common/Card';
@@ -11,13 +12,11 @@ import Navbar from '../components/layout/Navbar';
 import { formatDate } from '../utils/helpers';
 
 export default function Dashboard() {
-  // State
   const [systemStatus, setSystemStatus] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Load data on mount
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -25,67 +24,46 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     setError('');
-
     try {
-      // Load both system status and stats
-      const [healthData, statsData] = await Promise.all([
-        checkHealth(),
-        getStats()
-      ]);
-
+      const [healthData, statsData] = await Promise.all([checkHealth(), getStats()]);
       setSystemStatus(healthData);
       setStats(statsData.data);
     } catch (err) {
-      console.error('Failed to load dashboard:', err);
       setError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Quick actions data
   const quickActions = [
     {
       title: 'Predict Risk',
       description: 'Get real-time risk predictions for any location',
-      icon: (
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-        </svg>
-      ),
-      color: 'bg-primary',
-      link: '/predict'
+      icon: <BarChart3 size={32} />,
+      accent: '#818cf8',
+      link: '/tharushi/predict',
     },
     {
       title: 'View Map',
       description: 'Explore risk areas on interactive map',
-      icon: (
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z" clipRule="evenodd" />
-        </svg>
-      ),
-      color: 'bg-blue-600',
-      link: '/map-calendar'
+      icon: <Map size={32} />,
+      accent: '#3b82f6',
+      link: '/tharushi/map-calendar',
     },
     {
       title: 'Historical Data',
       description: 'Analyze past conflicts and trends',
-      icon: (
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-        </svg>
-      ),
-      color: 'bg-yellow-600',
-      link: '/historical'
-    }
+      icon: <TrendingUp size={32} />,
+      accent: '#f59e0b',
+      link: '/tharushi/historical',
+    },
   ];
 
-  // Render loading state
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
         <Navbar />
-        <main className="flex items-center justify-center flex-1">
+        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Loading text="Loading dashboard..." />
         </main>
         <Footer />
@@ -93,16 +71,16 @@ export default function Dashboard() {
     );
   }
 
-  // Render error state
   if (error) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
         <Navbar />
-        <main className="container flex-1 px-4 py-8 mx-auto">
+        <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', padding: '32px 24px', width: '100%' }}>
           <ErrorMessage message={error} />
           <button
             onClick={loadDashboardData}
-            className="px-4 py-2 mt-4 text-white rounded-lg bg-primary hover:bg-green-700"
+            className="btn-emerald"
+            style={{ marginTop: '16px' }}
           >
             Retry
           </button>
@@ -113,172 +91,131 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
       <Navbar />
 
-      <main className="container flex-1 px-4 py-8 mx-auto">
+      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', padding: '32px 24px', width: '100%' }}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-gray-800">
+            <h1 className="page-title-gradient" style={{ fontSize: '2rem', marginBottom: '6px' }}>
               Wildlife Conflict Dashboard
             </h1>
-            <p className="text-gray-600">
-              Monitor and analyze wildlife conflict risks in real-time
-            </p>
+            <p style={{ color: '#9ca3af', fontSize: '15px' }}>Monitor and analyze wildlife conflict risks in real-time</p>
           </div>
           <button
             onClick={loadDashboardData}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="btn-emerald"
+            style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: '#d1d5db', boxShadow: 'none', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-            </svg>
+            <RefreshCw size={18} />
             Refresh
           </button>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
           <StatCard
             title="High Risk Areas"
             value={stats?.predictions?.high_risk_count || 0}
-            icon={(
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            )}
+            icon={<AlertTriangle size={28} />}
             color="danger"
           />
-
           <StatCard
             title="Medium Risk Areas"
             value={stats?.predictions?.medium_risk_count || 0}
-            icon={(
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            )}
+            icon={<Info size={28} />}
             color="warning"
           />
-
           <StatCard
             title="Low Risk Areas"
             value={stats?.predictions?.low_risk_count || 0}
-            icon={(
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            )}
-            color="info"
+            icon={<CheckCircle size={28} />}
+            color="primary"
           />
-
           <StatCard
             title="Total Predictions"
             value={stats?.predictions?.total_predictions || 0}
-            icon={(
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-              </svg>
-            )}
-            color="primary"
+            icon={<BarChart3 size={28} />}
+            color="info"
           />
         </div>
 
         {/* Quick Actions */}
         <Card title="Quick Actions" className="mb-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             {quickActions.map((action, index) => (
               <Link
                 key={index}
                 to={action.link}
-                className="p-6 transition-all border-2 border-gray-200 rounded-lg group hover:border-primary hover:shadow-lg"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '20px',
+                  borderRadius: '14px',
+                  border: `1px solid rgba(255,255,255,0.1)`,
+                  background: 'rgba(255,255,255,0.04)',
+                  textDecoration: 'none',
+                  transition: 'all 0.3s',
+                  borderLeft: `4px solid ${action.accent}`,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'none'; }}
               >
-                <div className={`${action.color} w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform`}>
-                  {action.icon}
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-800 transition-colors group-hover:text-primary">
-                  {action.title}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {action.description}
-                </p>
+                <div style={{ marginBottom: '12px', color: action.accent }}>{action.icon}</div>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f3f4f6', marginBottom: '6px' }}>{action.title}</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', lineHeight: 1.5 }}>{action.description}</p>
               </Link>
             ))}
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
           {/* System Status */}
           <Card title="System Status">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-green-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                  <span className="font-medium text-gray-800">API Status</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { label: 'API Status', value: systemStatus?.api || 'Running', color: 'var(--emerald-400)', dot: 'var(--emerald-500)' },
+                { label: 'Model Status', value: systemStatus?.model_loaded ? 'Loaded' : 'Not Loaded', color: systemStatus?.model_loaded ? '#818cf8' : '#f87171', dot: systemStatus?.model_loaded ? '#818cf8' : '#ef4444' },
+                { label: 'Data Status', value: systemStatus?.data_loaded ? 'Loaded' : 'Not Loaded', color: systemStatus?.data_loaded ? '#c084fc' : '#f87171', dot: systemStatus?.data_loaded ? '#c084fc' : '#ef4444' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.dot, animation: i === 0 ? 'pulse 2s ease-in-out infinite' : undefined }} />
+                    <span style={{ fontWeight: 500, color: '#d1d5db', fontSize: '14px' }}>{item.label}</span>
+                  </div>
+                  <span style={{ fontWeight: 700, color: item.color, fontSize: '14px' }}>{item.value}</span>
                 </div>
-                <span className="font-semibold text-green-600">
-                  {systemStatus?.api || 'Running'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${systemStatus?.model_loaded ? 'bg-blue-500' : 'bg-red-500'}`} />
-                  <span className="font-medium text-gray-800">Model Status</span>
-                </div>
-                <span className={`font-semibold ${systemStatus?.model_loaded ? 'text-blue-600' : 'text-red-600'}`}>
-                  {systemStatus?.model_loaded ? 'Loaded' : 'Not Loaded'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-lg bg-purple-50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${systemStatus?.data_loaded ? 'bg-purple-500' : 'bg-red-500'}`} />
-                  <span className="font-medium text-gray-800">Data Status</span>
-                </div>
-                <span className={`font-semibold ${systemStatus?.data_loaded ? 'text-purple-600' : 'text-red-600'}`}>
-                  {systemStatus?.data_loaded ? 'Loaded' : 'Not Loaded'}
-                </span>
-              </div>
+              ))}
             </div>
           </Card>
 
           {/* Recent Predictions */}
           <Card title="Recent Predictions">
             {stats?.predictions?.recent_predictions?.length > 0 ? (
-              <div className="space-y-3 overflow-y-auto max-h-80">
-                {stats.predictions.recent_predictions.map((pred, index) => (
-                  <div key={index} className="flex items-start gap-4 pb-3 border-b last:border-0">
-                    <div className={`p-2 rounded-lg ${
-                      pred.risk_level === 'HIGH' ? 'bg-red-100' :
-                      pred.risk_level === 'MEDIUM' ? 'bg-yellow-100' :
-                      'bg-green-100'
-                    }`}>
-                      <svg className={`h-5 w-5 ${
-                        pred.risk_level === 'HIGH' ? 'text-red-600' :
-                        pred.risk_level === 'MEDIUM' ? 'text-yellow-600' :
-                        'text-green-600'
-                      }`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
+                {stats.predictions.recent_predictions.map((pred, index) => {
+                  const riskColor = pred.risk_level === 'HIGH' ? '#ef4444' : pred.risk_level === 'MEDIUM' ? '#f59e0b' : 'var(--emerald-500)';
+                  return (
+                    <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ padding: '8px', borderRadius: '10px', background: `${riskColor}20`, color: riskColor, flexShrink: 0 }}>
+                        <MapPin size={18} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '14px', fontWeight: 600, color: '#f3f4f6', marginBottom: '2px' }}>
+                          <span style={{ color: riskColor }}>{pred.risk_level}</span> Risk &mdash; {pred.risk_score.toFixed(2)}
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '2px' }}>
+                          Lat: {pred.latitude.toFixed(4)}, Lon: {pred.longitude.toFixed(4)}
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#6b7280' }}>{formatDate(pred.timestamp)}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">
-                        {pred.risk_level} Risk - {pred.risk_score.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Lat: {pred.latitude.toFixed(4)}, Lon: {pred.longitude.toFixed(4)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatDate(pred.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className="py-8 text-center text-gray-600">No recent predictions</p>
+              <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0', fontSize: '14px' }}>No recent predictions</p>
             )}
           </Card>
         </div>
@@ -288,3 +225,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

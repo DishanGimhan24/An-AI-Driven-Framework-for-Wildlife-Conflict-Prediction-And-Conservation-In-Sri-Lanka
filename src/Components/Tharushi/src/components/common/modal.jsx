@@ -1,39 +1,47 @@
+import { X } from 'lucide-react';
+
+const SIZES = { sm: '440px', md: '520px', lg: '760px', xl: '960px' };
+
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
   if (!isOpen) return null;
 
-  const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
-  };
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, overflowY: 'auto' }}>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+      <div
         onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
       />
-      
+
       {/* Modal */}
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className={`relative bg-white rounded-lg shadow-xl ${sizes[size]} w-full max-h-[90vh] overflow-y-auto`}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
+        <div style={{
+          position: 'relative',
+          background: 'rgba(17,24,39,0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          borderRadius: '20px',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+          maxWidth: SIZES[size] || SIZES.md,
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#d1d5db', margin: 0 }}>{title}</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '4px', borderRadius: '6px' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#d1d5db'}
+              onMouseLeave={e => e.currentTarget.style.color = '#6b7280'}
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X size={20} />
             </button>
           </div>
-          
+
           {/* Content */}
-          <div className="p-6">
+          <div style={{ padding: '24px' }}>
             {children}
           </div>
         </div>

@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../api/authAPI';
 import { useApp } from '../../context/AppContext';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout: logoutContext, isLoggedIn } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -17,66 +20,124 @@ export default function Navbar() {
     return null;
   }
 
+  const navLinks = [
+    { to: '/tharushi/dashboard', label: 'Dashboard' },
+    { to: '/tharushi/predict', label: 'Predict Risk' },
+    { to: '/tharushi/map-calendar', label: 'Map & Calendar' },
+    { to: '/tharushi/historical', label: 'Historical Data' },
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <nav className="bg-primary shadow-lg">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/tharushi/dashboard" className="flex items-center gap-3">
-            <div className="bg-white rounded-full p-2">
-              <svg className="h-8 w-8 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
-              </svg>
+    <nav className="glass-navbar">
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
+          {/* Logo */}
+          <Link
+            to="/tharushi/dashboard"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, var(--emerald-600), var(--emerald-800))',
+              borderRadius: '50%',
+              width: '44px',
+              height: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              boxShadow: '0 0 12px rgba(16,185,129,0.4)',
+            }}>
+              🐘
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">ELESAFE</h1>
-              <p className="text-xs text-white/90">Wildlife Conflict Prediction</p>
+              <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--emerald-400)', margin: 0, lineHeight: 1.2 }}>ELESAFE</h1>
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Conflict Prediction</p>
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/tharushi/dashboard" className="text-white hover:text-white/80 transition-colors">
-              Dashboard
-            </Link>
-            <Link to="/tharushi/predict" className="text-white hover:text-white/80 transition-colors">
-              Predict Risk
-            </Link>
-            <Link to="/tharushi/map-calendar" className="text-white hover:text-white/80 transition-colors">
-              Map &amp; Calendar
-            </Link>
-            <Link to="/tharushi/historical" className="text-white hover:text-white/80 transition-colors">
-              Historical Data
-            </Link>
+          {/* Desktop Nav */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="hidden md:flex">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  color: isActive(link.to) ? 'var(--emerald-400)' : '#d1d5db',
+                  background: isActive(link.to) ? 'rgba(16,185,129,0.15)' : 'transparent',
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {isLoggedIn && (
-            <div className="flex items-center gap-4">
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-white">{user?.username || 'User'}</p>
-                <p className="text-xs text-white/90">Wildlife Officer</p>
-              </div>
-              <button onClick={handleLogout} className="bg-white text-primary px-4 py-2 rounded-lg hover:bg-white/90 transition-colors text-sm font-medium">
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="md:hidden pb-4">
-          <div className="flex flex-col gap-2">
-            <Link to="/tharushi/dashboard" className="text-white hover:text-white/80 transition-colors py-1">
-              Dashboard
-            </Link>
-            <Link to="/tharushi/predict" className="text-white hover:text-white/80 transition-colors py-1">
-              Predict Risk
-            </Link>
-            <Link to="/tharushi/map-calendar" className="text-white hover:text-white/80 transition-colors py-1">
-              Map &amp; Calendar
-            </Link>
-            <Link to="/tharushi/historical" className="text-white hover:text-white/80 transition-colors py-1">
-              Historical Data
-            </Link>
+          {/* Right side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {isLoggedIn && (
+              <>
+                <div style={{ textAlign: 'right', display: 'none' }} className="hidden md:block">
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#f3f4f6', margin: 0 }}>{user?.username || 'User'}</p>
+                  <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>Wildlife Officer</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    borderRadius: '10px',
+                    color: '#fca5a5',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            )}
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{ background: 'none', border: 'none', color: '#d1d5db', cursor: 'pointer', padding: '8px', display: 'none' }}
+              className="block md:hidden"
+            >
+              {menuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div style={{ padding: '12px 0 16px', borderTop: '1px solid rgba(255,255,255,0.1)' }} className="md:hidden">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  display: 'block',
+                  padding: '10px 8px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  color: isActive(link.to) ? 'var(--emerald-400)' : '#d1d5db',
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </nav>
   );
