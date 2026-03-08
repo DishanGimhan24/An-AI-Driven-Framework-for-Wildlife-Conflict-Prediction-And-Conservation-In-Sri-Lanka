@@ -1,49 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --dark-900: #0a0e14;
+  --dark-800: #111827;
+  --dark-700: #1f2937;
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
 .app-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: 60px;
-  background: #1a3c2e;
+  background: rgba(10, 14, 20, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 24px;
+  padding: 0 24px;
+  gap: 16px;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
 }
 
 .app-header__brand {
-  font-weight: 700;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.95rem;
   white-space: nowrap;
-  margin-right: 12px;
+  margin-right: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-header__brand-icon {
+  font-size: 20px;
+  -webkit-text-fill-color: initial;
+  animation: float 3s ease-in-out infinite;
+}
+
+.app-header__divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
 
 .app-header__nav {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  overflow: hidden;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-header__nav::-webkit-scrollbar {
+  display: none;
 }
 
 .app-header__nav a {
-  color: #cde8d8;
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  letter-spacing: 0.1px;
 }
 
 .app-header__nav a:hover {
-  background: rgba(255,255,255,0.15);
-  color: #fff;
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+  transform: translateY(-1px);
 }
 
 .app-header__nav a.active {
-  background: #2e7d52;
-  color: #fff;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+  font-weight: 600;
+}
+
+.app-header__status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.app-header__status-dot {
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
