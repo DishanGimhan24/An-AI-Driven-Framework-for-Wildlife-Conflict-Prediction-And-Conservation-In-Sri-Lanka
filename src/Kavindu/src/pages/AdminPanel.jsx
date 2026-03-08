@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { UserPlus, Edit2, Power, RefreshCw, Shield, Users, UserCheck, UserX, X, Search } from "lucide-react";
 
-const API = "http://127.0.0.1:8000";
+const API = "http://localhost:8002";
 
 const ROLES = ["officer", "admin"];
 

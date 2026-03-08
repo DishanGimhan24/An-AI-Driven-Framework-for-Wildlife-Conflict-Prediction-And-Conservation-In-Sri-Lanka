@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, MapPin, Calendar, TrendingUp, Target, Zap } from "lucide-react";
 import { RadialBarChart, RadialBar, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://localhost:8002";
 
 const MONTHS = [
   { v: 1, label: "1 - January" },

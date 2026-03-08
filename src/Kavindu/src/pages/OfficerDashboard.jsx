@@ -97,8 +97,8 @@ function AssignModal({ report, onClose, onAssigned }) {
       setLoadingOfficers(true);
       try {
         const url = filterRegion
-          ? `http://127.0.0.1:8000/api/officers?region=${encodeURIComponent(report.region)}`
-          : "http://127.0.0.1:8000/api/officers";
+          ? `http://localhost:8002/api/officers?region=${encodeURIComponent(report.region)}`
+          : "http://localhost:8002/api/officers";
         const res = await axios.get(url);
         setOfficers(res.data.officers || []);
       } catch {
@@ -129,7 +129,7 @@ function AssignModal({ report, onClose, onAssigned }) {
   async function handleAssign() {
     setSaving(true);
     try {
-      await axios.patch(`http://127.0.0.1:8000/api/reports/${report._id}/assign`, {
+      await axios.patch(`http://localhost:8002/api/reports/${report._id}/assign`, {
         assigned_team: selected,
         team_lead: teamLead || null,
       });
@@ -146,7 +146,7 @@ function AssignModal({ report, onClose, onAssigned }) {
     setSuggesting(true);
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/officers/suggest?region=${encodeURIComponent(report.region)}&offence_type=${encodeURIComponent(report.offence_type)}`
+        `http://localhost:8002/api/officers/suggest?region=${encodeURIComponent(report.region)}&offence_type=${encodeURIComponent(report.offence_type)}`
       );
       const { suggestions, suggested_lead } = res.data;
       const emails = suggestions.map((o) => o.email);
@@ -314,7 +314,7 @@ export default function OfficerDashboard() {
     setError("");
     setLoading(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/reports");
+      const response = await axios.get("http://localhost:8002/api/reports");
       setReports(response.data.reports || []);
     } catch (e) {
       setError(e.response?.data?.detail || e.message);
@@ -329,7 +329,7 @@ export default function OfficerDashboard() {
     if (!id) return;
     setError("");
     try {
-      await axios.patch(`http://127.0.0.1:8000/api/reports/${id}/status`, { status });
+      await axios.patch(`http://localhost:8002/api/reports/${id}/status`, { status });
       await load();
     } catch (e) {
       setError(e.response?.data?.detail || e.message);
@@ -478,7 +478,7 @@ export default function OfficerDashboard() {
               <div style={{ marginTop: "0.5rem" }}>
                 <strong>Evidence Photo:</strong>
                 <img
-                  src={`http://127.0.0.1:8000${r.image_url}`}
+                  src={`http://localhost:8002${r.image_url}`}
                   alt="Evidence"
                   style={{ width: "100%", maxHeight: "250px", objectFit: "cover", borderRadius: "8px", marginTop: "0.5rem", border: "1px solid rgba(255,255,255,0.1)" }}
                 />

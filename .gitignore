@@ -30,3 +30,4 @@ dist-ssr
 node_modules/
 elephant-map/node_modules/@adobe/css-tools/LICENSE
 elephant-map/node_modules/.package-lock.json
+package-lock.json

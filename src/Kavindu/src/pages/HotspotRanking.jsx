@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { AlertTriangle, TrendingUp, Target, Calendar } from "lucide-react";
 import { ResponsiveContainer } from "recharts";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://localhost:8002";
 
 const MONTHS = [
     { v: 1, label: "1 - January" },

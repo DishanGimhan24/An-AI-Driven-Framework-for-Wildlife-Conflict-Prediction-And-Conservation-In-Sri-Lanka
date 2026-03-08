@@ -171,7 +171,7 @@ export default function Report() {
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        const uploadRes = await axios.post("http://127.0.0.1:8000/api/upload", formData, {
+        const uploadRes = await axios.post("http://localhost:8002/api/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
         imageUrl = uploadRes.data.image_url;
@@ -189,7 +189,7 @@ export default function Report() {
         is_anonymous: isAnonymous,
       };
 
-      const response = await axios.post("http://127.0.0.1:8000/api/reports", payload);
+      const response = await axios.post("http://localhost:8002/api/reports", payload);
       setResult(response.data);
 
       // Reset form on success
