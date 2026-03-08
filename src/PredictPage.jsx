@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMapEvents } from "react-leaflet";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { THARUSHI_API } from "./apiConfig";
+import { DISHAN_API } from "./apiConfig";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -55,7 +55,7 @@ export default function PredictPage() {
       dateTime.setHours(hour, 0, 0, 0);
       const datetime = dateTime.toISOString();
 
-      const response = await axios.post(`${THARUSHI_API}/predict_risk`, {
+      const response = await axios.post(`${DISHAN_API}/predict_risk`, {
         latitude: latlng.lat,
         longitude: latlng.lng,
         datetime: datetime
