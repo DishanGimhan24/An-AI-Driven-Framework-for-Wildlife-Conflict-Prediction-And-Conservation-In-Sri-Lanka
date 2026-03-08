@@ -68,6 +68,85 @@ const FEATURES = [
     desc: "Overview of the AI-Smart Animal Vehicle Collision Predictor platform — mission, stats, and feature highlights for the Sri Lanka wildlife safety initiative.",
     accent: "#34d399",
   },
+  // ── Tharushi (ELESAFE) ──────────────────────────────────────
+  {
+    path: "/tharushi/login",
+    icon: "🛡️",
+    title: "ELESAFE Login",
+    desc: "Sign in to the ELESAFE wildlife conflict prediction platform to access personalised risk dashboards, forecasts, and historical analysis.",
+    accent: "#f472b6",
+  },
+  {
+    path: "/tharushi/dashboard",
+    icon: "📈",
+    title: "ELESAFE Dashboard",
+    desc: "Real-time overview of wildlife conflict risk across cities — stat cards, heat maps, risk trends, and forecast summaries powered by the ELESAFE AI model.",
+    accent: "#e879f9",
+  },
+  {
+    path: "/tharushi/predict",
+    icon: "🧠",
+    title: "ELESAFE Risk Prediction",
+    desc: "Select a city and date range to run ELESAFE's ML risk prediction. View risk score, level badge, contributing factors, and confidence breakdown.",
+    accent: "#c084fc",
+  },
+  {
+    path: "/tharushi/map-calendar",
+    icon: "🗓️",
+    title: "ELESAFE Map Calendar",
+    desc: "Visualise daily wildlife conflict risk on an interactive map calendar. Browse predicted risk levels by date across all monitored cities in Sri Lanka.",
+    accent: "#a78bfa",
+  },
+  {
+    path: "/tharushi/historical",
+    icon: "📜",
+    title: "ELESAFE Historical",
+    desc: "Explore historical wildlife conflict records with trend charts, district breakdowns, and seasonal pattern analysis from the ELESAFE dataset.",
+    accent: "#818cf8",
+  },
+  // ── Kavindu (Wildlife Command Center) ───────────────────────
+  {
+    path: "/kavindu",
+    icon: "🏠",
+    title: "Command Center Home",
+    desc: "Landing page for the Wildlife Command Center — overview of the officer management, hotspot ranking, prediction dashboard, and reporting system.",
+    accent: "#38bdf8",
+  },
+  {
+    path: "/kavindu/dashboard",
+    icon: "📡",
+    title: "Prediction Dashboard",
+    desc: "Unified prediction dashboard for wildlife officers — view ML model outputs, district risk rankings, and real-time alert summaries across Sri Lanka.",
+    accent: "#0ea5e9",
+  },
+  {
+    path: "/kavindu/hotspots",
+    icon: "🔥",
+    title: "Hotspot Ranking",
+    desc: "Ranked list of wildlife conflict hotspots with risk scores, incident counts, and district details. Supports officer patrol planning and resource allocation.",
+    accent: "#f97316",
+  },
+  {
+    path: "/kavindu/report",
+    icon: "📋",
+    title: "Incident Report",
+    desc: "Submit and review wildlife conflict incident reports. Capture location, animal type, severity, and officer notes for centralised record keeping.",
+    accent: "#fb923c",
+  },
+  {
+    path: "/kavindu/officer/login",
+    icon: "👮",
+    title: "Officer Login",
+    desc: "Secure login portal for wildlife field officers to access the Command Center dashboard, assignments, and incident reporting tools.",
+    accent: "#34d399",
+  },
+  {
+    path: "/kavindu/admin",
+    icon: "⚙️",
+    title: "Admin Panel",
+    desc: "Administrator panel for managing officers, system settings, user roles, and reviewing all submitted incident reports across the Command Center.",
+    accent: "#94a3b8",
+  },
 ];
 
 const G = {
@@ -148,9 +227,9 @@ export default function DashboardPage() {
       });
   }, []);
 
-  const totalNodes     = stats?.corridor_network?.total_nodes ?? 0;
-  const totalCorridors = stats?.corridor_network?.total_corridors ?? 0;
-  const totalCrossings = stats?.corridor_network?.total_road_crossings ?? 0;
+  const totalNodes     = stats?.corridor_network?.total_nodes ?? stats?.total_nodes ?? 159;
+  const totalCorridors = stats?.corridor_network?.total_corridors ?? stats?.total_corridors ?? 283;
+  const totalCrossings = summary?.total ?? stats?.corridor_network?.total_road_crossings ?? 0;
   const dangerCounts   = summary?.by_danger_level ?? {};
   const top5           = summary?.top_5_dangerous ?? [];
 
