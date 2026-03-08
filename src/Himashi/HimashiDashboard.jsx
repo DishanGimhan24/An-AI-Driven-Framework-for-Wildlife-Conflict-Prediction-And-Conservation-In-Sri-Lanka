@@ -126,7 +126,7 @@ export default function Dashboard() {
   };
 
   const handleMapClick = () => {
-    navigate('/map');
+    navigate('/risk-map');
   };
 
   const handleDistrictClick = (district) => {

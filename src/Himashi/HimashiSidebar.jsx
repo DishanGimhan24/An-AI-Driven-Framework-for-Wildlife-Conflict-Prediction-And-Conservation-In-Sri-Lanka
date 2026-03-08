@@ -37,13 +37,22 @@ export default function HimashiSidebar() {
           Risk Map
         </NavLink>
 
-        <NavLink
+        {/* <NavLink
           to="/risk-prediction"
           className={({ isActive }) =>
             "sidebar__link" + (isActive ? " active" : "")
           }
         >
           Prediction
+        </NavLink> */}
+
+        <NavLink
+          to="/top-districts"
+          className={({ isActive }) =>
+            "sidebar__link" + (isActive ? " active" : "")
+          }
+        >
+          Top Dangerous Districts
         </NavLink>
       </nav>
     </aside>

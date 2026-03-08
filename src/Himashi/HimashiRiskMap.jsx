@@ -4,11 +4,34 @@ import {
   CircleMarker,
   Tooltip,
   Popup,
+  useMapEvents,
+  Marker,
 } from "react-leaflet";
 import Papa from "papaparse";
 import { useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
+import { HIMASHI_API } from "../apiConfig";
 import "./HimashiRiskMap.css";
+import L from "leaflet";
+
+// Fix for default markers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// Map click handler component
+function MapClickHandler({ onLocationSelect }) {
+  useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      onLocationSelect(lat, lng);
+    },
+  });
+  return null;
+}
 
 /** ─── Helpers ─────────────────────────────────────────── */
 
@@ -25,26 +48,29 @@ function getColor(level) {
 
 // Handles text labels AND numeric encoding: "1" = train, "0" = road
 function getVehicleType(p) {
-  const v = norm(p.vehicle_type ?? p.vehicle ?? p.transport ?? p.mode ?? "");
+  const v = String(p.vehicle_type ?? p.vehicle ?? p.transport ?? p.mode ?? "").trim().toLowerCase();
   if (v === "1" || v.includes("train") || v.includes("rail")) return "TRAIN";
-  if (v === "0" || v.includes("road") || v.includes("vehicle") || v.includes("car")) return "ROAD";
+  if (v === "0" || v.includes("road") || v.includes("vehicle") || v.includes("car") || v.includes("bus")) return "ROAD";
+  if (v.includes("train") || v.includes("rail")) return "TRAIN";
+  if (v.includes("road") || v.includes("vehicle") || v.includes("car") || v.includes("bus")) return "ROAD";
   return "UNKNOWN";
 }
 
 // Tries several field name variants, then falls back to risk_score threshold
 function getRiskLevel(p) {
-  const raw = norm(
-    p.risk_level ?? p.Risk_Level ?? p.RiskLevel ?? p.RISK_LEVEL ?? ""
-  );
-  if (raw === "high" || raw === "medium" || raw === "low") return raw;
+  const riskLevelField = p.risk_level ?? p.Risk_Level ?? p.RiskLevel ?? p.RISK_LEVEL ?? "";
+  const riskLevelStr = norm(riskLevelField);
+  if (riskLevelStr === "high" || riskLevelStr === "h") return "high";
+  if (riskLevelStr === "medium" || riskLevelStr === "med" || riskLevelStr === "m") return "medium";
+  if (riskLevelStr === "low" || riskLevelStr === "l") return "low";
   // Numeric fallback
-  const score = Number(p.risk_score ?? p.RiskScore ?? p.risk_score_norm ?? "");
+  const score = Number(p.risk_score ?? p.Risk_Score ?? p.RiskScore ?? p.RISK_SCORE ?? NaN);
   if (!Number.isNaN(score)) {
     if (score >= 0.7) return "high";
     if (score >= 0.4) return "medium";
     return "low";
   }
-  return "low";
+  return "unknown";
 }
 
 function getDistrict(p) {
@@ -56,10 +82,92 @@ function getDistrict(p) {
 export default function HimashiRiskMap() {
   const [points, setPoints] = useState([]);
   const [basemap, setBasemap] = useState("normal");
+
+  // Prediction form state
+  const [selectedPosition, setSelectedPosition] = useState(null);
+  const [predictionForm, setPredictionForm] = useState({
+    latitude: "",
+    longitude: "",
+    distance_to_forest: 1000,
+    distance_to_water: 1000,
+    distance_to_railway: 2000,
+  });
+  const [predictionResult, setPredictionResult] = useState(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
+
   const [showTrain, setShowTrain] = useState(true);
   const [showRoad, setShowRoad] = useState(true);
   const [showClusters, setShowClusters] = useState(true);
   const [onlyHigh, setOnlyHigh] = useState(false);
+
+  const handleLocationSelect = async (lat, lng) => {
+    setSelectedPosition({ lat, lng });
+    setPredictionForm((prev) => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6),
+    }));
+    setPredictionResult(null);
+    try {
+      const res = await fetch(`${HIMASHI_API}/calculate-distances`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.error) {
+          setPredictionForm((prev) => ({
+            ...prev,
+            distance_to_forest: data.distance_to_forest ?? 1500,
+            distance_to_water: data.distance_to_water ?? 800,
+            distance_to_railway: data.distance_to_railway ?? 2000,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching distances:", err);
+    }
+  };
+
+  const handlePredictionFormChange = (e) => {
+    const { name, value } = e.target;
+    setPredictionForm((prev) => ({
+      ...prev,
+      [name]: name === "latitude" || name === "longitude" ? value : parseFloat(value) || "",
+    }));
+  };
+
+  const handlePredict = async () => {
+    if (!predictionForm.latitude || !predictionForm.longitude) {
+      setPredictionResult({ error: "Please select a location on the map or enter coordinates" });
+      return;
+    }
+    if (!predictionForm.distance_to_forest || !predictionForm.distance_to_water || !predictionForm.distance_to_railway) {
+      setPredictionResult({ error: "Please fill in all distance fields" });
+      return;
+    }
+    setPredictionLoading(true);
+    try {
+      const res = await fetch(`${HIMASHI_API}/predict-collision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          latitude: parseFloat(predictionForm.latitude),
+          longitude: parseFloat(predictionForm.longitude),
+          distance_to_forest: predictionForm.distance_to_forest,
+          distance_to_water: predictionForm.distance_to_water,
+          distance_to_railway: predictionForm.distance_to_railway,
+        }),
+      });
+      const data = await res.json();
+      setPredictionResult(data);
+    } catch (err) {
+      setPredictionResult({ error: "Failed to fetch prediction: " + err.message });
+    } finally {
+      setPredictionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const parseAndStore = (text) => {
@@ -149,7 +257,7 @@ export default function HimashiRiskMap() {
       clusters[clusterId].lonSum += lon;
       clusters[clusterId].count += 1;
 
-      const rs = Number(p.risk_score);
+      const rs = Number(p.risk_score ?? p.Risk_Score ?? p.RiskScore ?? p.RISK_SCORE ?? NaN);
       clusters[clusterId].maxRisk = Math.max(
         clusters[clusterId].maxRisk,
         Number.isNaN(rs) ? 0 : rs
@@ -215,6 +323,66 @@ export default function HimashiRiskMap() {
           <div className="rm-badge">{counts.total} points</div>
         </div>
 
+        {/* Risk Prediction Form */}
+        <div className="rm-section">
+          <div className="rm-label">Predict Risk</div>
+          <p style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+            Click on map to select location, or enter coordinates
+          </p>
+          {[
+            { label: "Latitude", name: "latitude", placeholder: "Click map or enter", step: "0.0001" },
+            { label: "Longitude", name: "longitude", placeholder: "Click map or enter", step: "0.0001" },
+            { label: "Distance to Forest (m)", name: "distance_to_forest", step: "100", min: "0" },
+            { label: "Distance to Water (m)", name: "distance_to_water", step: "100", min: "0" },
+            { label: "Distance to Railway (m)", name: "distance_to_railway", step: "100", min: "0" },
+          ].map(({ label, name, ...rest }) => (
+            <div key={name} style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{label}</label>
+              <input
+                type="number"
+                name={name}
+                value={predictionForm[name]}
+                onChange={handlePredictionFormChange}
+                {...rest}
+                style={{ width: "100%", padding: "8px", marginTop: 4, border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+              />
+            </div>
+          ))}
+          <button
+            onClick={handlePredict}
+            disabled={predictionLoading}
+            style={{
+              width: "100%", padding: "10px", marginTop: 12,
+              backgroundColor: predictionLoading ? "#cbd5e1" : "#2563eb",
+              color: "white", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600,
+              cursor: predictionLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {predictionLoading ? "Predicting..." : "Predict Risk"}
+          </button>
+          {predictionResult && (
+            <div
+              style={{
+                marginTop: 12, padding: 12, borderRadius: 6, fontSize: 13,
+                backgroundColor: predictionResult.error ? "#f1f5f9" : predictionResult.risk_level === "High" ? "#fee2e2" : predictionResult.risk_level === "Medium" ? "#fef3c7" : "#dcfce7",
+                color: predictionResult.error ? "#d32f2f" : predictionResult.risk_level === "High" ? "#991b1b" : predictionResult.risk_level === "Medium" ? "#92400e" : "#166534",
+                border: "1px solid",
+                borderColor: predictionResult.error ? "#ef9a9a" : predictionResult.risk_level === "High" ? "#fecaca" : predictionResult.risk_level === "Medium" ? "#fde68a" : "#bbf7d0",
+              }}
+            >
+              {predictionResult.error ? (
+                <div><strong>⚠ Error</strong><br />{predictionResult.error}</div>
+              ) : (
+                <div>
+                  <strong>Risk Assessment</strong><br />
+                  Risk Score: <strong>{predictionResult.risk_score?.toFixed(2)}%</strong><br />
+                  Risk Level: <strong>{predictionResult.risk_level}</strong>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Basemap */}
         <div className="rm-section">
           <div className="rm-label">Basemap</div>
@@ -241,17 +409,25 @@ export default function HimashiRiskMap() {
               <div className="rm-stat-value">{counts.high}</div>
             </div>
             <div className="rm-stat-card is-med">
-              <div className="rm-stat-label">Medium</div>
+              <div className="rm-stat-label">Medium Risk</div>
               <div className="rm-stat-value">{counts.medium}</div>
             </div>
             <div className="rm-stat-card is-low">
               <div className="rm-stat-label">Low Risk</div>
               <div className="rm-stat-value">{counts.low}</div>
             </div>
-            <div className="rm-stat-card is-cluster">
-              <div className="rm-stat-label">Clusters</div>
-              <div className="rm-stat-value">{clusterCenters.length}</div>
-            </div>
+          </div>
+        </div>
+
+        {/* Cluster Analysis */}
+        <div className="rm-section">
+          <div className="rm-label">Cluster Analysis</div>
+          <div className="rm-stat-card is-cluster">
+            <div className="rm-stat-label">Total Clusters</div>
+            <div className="rm-stat-value">{clusterCenters.length}</div>
+          </div>
+          <div className="rm-footnote" style={{ marginTop: 10 }}>
+            Clusters are hotspot zones with geographically grouped incidents.
           </div>
         </div>
 
@@ -316,6 +492,12 @@ export default function HimashiRiskMap() {
           attribution={baseLayers[basemap].attribution}
         />
 
+        <MapClickHandler onLocationSelect={handleLocationSelect} />
+
+        {selectedPosition && (
+          <Marker position={[selectedPosition.lat, selectedPosition.lng]} />
+        )}
+
         {filteredPoints.map((p, i) => {
           const lat = Number(p.latitude ?? p.lat);
           const lon = Number(p.longitude ?? p.lng ?? p.lon);
@@ -357,22 +539,31 @@ export default function HimashiRiskMap() {
         })}
 
         {showClusters &&
-          clusterCenters.map((c) => (
-            <CircleMarker
-              key={`cluster-${c.cluster_id}`}
-              center={[c.lat, c.lon]}
-              radius={Math.min(28, 10 + c.count)}
-              pathOptions={{ color: "#7c3aed", fillColor: "#7c3aed", fillOpacity: 0.25 }}
-            >
-              <Popup>
-                <div style={{ fontSize: 13 }}>
-                  <b>Cluster ID:</b> {c.cluster_id}<br />
-                  <b>Incidents:</b> {c.count}<br />
-                  <b>Max Risk:</b> {c.maxRisk.toFixed(2)}
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
+          clusterCenters.map((c) => {
+            const size = Math.min(35, Math.max(15, 10 + Math.sqrt(c.count) * 2));
+            return (
+              <CircleMarker
+                key={`cluster-${c.cluster_id}`}
+                center={[c.lat, c.lon]}
+                radius={size}
+                pathOptions={{ color: "#7c3aed", weight: 3, fillColor: "#a78bfa", fillOpacity: 0.3 }}
+              >
+                <Popup>
+                  <div style={{ fontSize: 13 }}>
+                    <b>Cluster ID:</b> {c.cluster_id}<br />
+                    <b>Total Incidents:</b> {c.count}<br />
+                    <b>Max Risk Score:</b> {c.maxRisk.toFixed(2)}<br />
+                    <b>Center:</b> {c.lat.toFixed(4)}, {c.lon.toFixed(4)}
+                  </div>
+                </Popup>
+                <Tooltip direction="top" offset={[0, -size - 5]} opacity={1}>
+                  <div style={{ fontSize: 12, fontWeight: "bold", color: "#7c3aed" }}>
+                    {c.count} incidents
+                  </div>
+                </Tooltip>
+              </CircleMarker>
+            );
+          })}
       </MapContainer>
     </div>
   );
