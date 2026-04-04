@@ -15,6 +15,7 @@ export default function Header() {
         <NavLink to="/hotspots"        className={({ isActive }) => isActive ? 'active' : ''}>Hotspots</NavLink>
         <NavLink to="/corridors"       className={({ isActive }) => isActive ? 'active' : ''}>Corridors</NavLink>
         <NavLink to="/road-crossings"  className={({ isActive }) => isActive ? 'active' : ''}>Road Crossings</NavLink>
+        <NavLink to="/road-crossings-map" className={({ isActive }) => isActive ? 'active' : ''}>Crossings Map</NavLink>
         <NavLink to="/predict"         className={({ isActive }) => isActive ? 'active' : ''}>Predict</NavLink>
         <NavLink to="/avc-home"        className={({ isActive }) => isActive ? 'active' : ''}>AVC Home</NavLink>
         <NavLink to="/risk-dashboard"  className={({ isActive }) => isActive ? 'active' : ''}>Risk Dashboard</NavLink>
