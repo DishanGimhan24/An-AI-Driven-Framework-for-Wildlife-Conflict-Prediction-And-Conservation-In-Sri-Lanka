@@ -3,6 +3,7 @@
    Glassmorphism Design with Emerald Green/Dark
    ============================================ */
 
+
 :root {
   --emerald-50: #ecfdf5;
   --emerald-100: #d1fae5;
@@ -236,7 +237,7 @@ body::before {
 /* Main Content Area */
 .main-content {
   flex: 1;
-  margin-left: 280px;
+  margin-left: 0px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
