@@ -1,8 +1,9 @@
+// src/pages/PredictPage.jsx
 import PredictForm from "../components/PredictForm";
 import RiskCard    from "../components/RiskCard";
 import { usePrediction } from "../hooks/usePrediction";
 
-export default function PredictionDashboard() {
+export default function PredictPage() {
   const { result, loading, error, predict, reset } = usePrediction();
 
   return (
@@ -17,7 +18,6 @@ export default function PredictionDashboard() {
       <div className="predict-layout">
         <div className="predict-left">
           <PredictForm onSubmit={predict} loading={loading} />
-
           {error && (
             <div className="error-box">
               ❌ {error}
@@ -25,6 +25,7 @@ export default function PredictionDashboard() {
             </div>
           )}
 
+          {/* How to read results guide */}
           <div className="info-box">
             <h4>📖 How to Read Results</h4>
             <ul>
@@ -43,10 +44,7 @@ export default function PredictionDashboard() {
             : (
               <div className="empty-state">
                 <div className="empty-icon">🦚</div>
-                <p>
-                  Fill in the form and click <strong>Predict Risk</strong>
-                  <br />to see the AI assessment here.
-                </p>
+                <p>Fill in the form and click <strong>Predict Risk</strong><br />to see the AI assessment here.</p>
               </div>
             )
           }
