@@ -555,6 +555,7 @@ export default function HimashiAddIncident() {
           <div className="incident-actions">
             <button type="submit" className="incident-btn incident-btn--primary">Save Incident</button>
             <button type="button" className="incident-btn incident-btn--secondary" onClick={handleReset}>Reset Form</button>
+            <button type="button" className="incident-btn incident-btn--secondary" onClick={() => navigate("/incidents")}>View Data</button>
             <button type="button" className="incident-btn incident-btn--danger" onClick={handleCancel}>Cancel</button>
           </div>
           </form>

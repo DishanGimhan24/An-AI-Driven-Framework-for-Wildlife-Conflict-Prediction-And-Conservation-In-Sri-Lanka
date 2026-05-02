@@ -25,7 +25,7 @@ import HimashiTopDistricts    from './Himashi/HimashiTopDistricts';    // /top-d
 import HimashiRiskSummary     from './Himashi/HimashiRiskSummary';     // /risk-summary
 import HimashiRiskLocations   from './Himashi/HimashiRiskLocations';   // /risk-locations
 import HimashiAddIncident     from './Himashi/HimashiAddIncident';     // /add-incident
-import HimashiIncidentList    from './Himashi/HimashiIncidentList';    // /incidents
+import HimashiViewIncidents   from './Himashi/HimashiViewIncidents';   // /incidents
 
 // ── Tharushi (ELESAFE) pages ──────────────────
 import { AppProvider, useApp } from './Components/Tharushi/src/context/AppContext';
@@ -85,7 +85,7 @@ function App() {
           <Route path="/risk-summary"       element={<HimashiRiskSummary />} />
           <Route path="/risk-locations"     element={<HimashiRiskLocations />} />
           <Route path="/add-incident"       element={<HimashiAddIncident />} />
-          <Route path="/incidents"          element={<HimashiIncidentList />} />
+          <Route path="/incidents"          element={<HimashiViewIncidents />} />
 
           {/* ── Tharushi (ELESAFE) routes ── */}
           <Route path="/tharushi" element={<TharushiLayout />}>
