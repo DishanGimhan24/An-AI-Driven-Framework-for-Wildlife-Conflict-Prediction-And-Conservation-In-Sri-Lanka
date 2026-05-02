@@ -133,14 +133,51 @@ export default function HimashiAddIncident() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
     if (formData.incidentDate && formData.incidentDate > todayString) {
       setDateError("Incident date cannot be a future date.");
       return;
     }
-    console.log(formData);
-    alert("Incident saved successfully");
+    const payload = {
+      province: formData.province,
+      district: formData.district,
+      village: formData.villageArea,
+      road: formData.roadRailway,
+      landmark: formData.nearestLandmark,
+      date: formData.incidentDate,
+      time: formData.incidentTime,
+      dayNight: formData.dayNight,
+      animalType: formData.animalType,
+      numberOfAnimals: formData.animalCount,
+      age: formData.animalAge,
+      vehicleType: formData.vehicleType,
+      direction: formData.direction,
+      injuryAnimal: formData.injuryAnimal,
+      deathAnimal: formData.deathAnimal,
+      injuryHuman: formData.injuryHumans,
+      deathHuman: formData.deathHumans,
+      description: formData.description,
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/incidents/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      alert("Incident saved successfully");
+      handleReset();
+    } catch (error) {
+      alert("Failed to save incident");
+    }
   };
 
   const handleReset = () => {
@@ -529,7 +566,7 @@ export default function HimashiAddIncident() {
             <button
               type="button"
               className="incident-side__btn incident-side__btn--primary"
-              onClick={() => navigate("/risk-map")}
+              onClick={() => navigate("/incidents")}
             >
               <List size={16} />
               View All Incidents
