@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Wildlife Safety",
+    "slug": "wildlife-safety",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Used to pin the exact location of a wildlife incident in your report.",
+        "NSCameraUsageDescription": "Used to photograph evidence for your wildlife report.",
+        "NSPhotoLibraryUsageDescription": "Used to attach a photo as evidence in your wildlife report."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "plugins": [
+      "expo-image-picker",
+      "expo-location"
+    ]
+  }
+}
