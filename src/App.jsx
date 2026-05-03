@@ -32,6 +32,7 @@ import TharushiDashboard    from './Components/Tharushi/src/pages/Dashboard';   
 import TharushiPredict      from './Components/Tharushi/src/pages/RiskPrediction'; // /tharushi/predict
 import TharushiMapCalendar  from './Components/Tharushi/src/pages/MapCalendar';    // /tharushi/map-calendar
 import TharushiHistorical   from './Components/Tharushi/src/pages/Historical';     // /tharushi/historical
+import TharushiEcoStress   from './Components/Tharushi/src/pages/EnvironmentalStress'; // /tharushi/eco-stress
 
 // ── Kavindu (Wildlife Command Center) pages ───
 import KavinduLayout           from './Kavindu/src/components/Layout';              // /kavindu layout
@@ -91,6 +92,7 @@ function App() {
             <Route path="predict"       element={<TharushiProtected><TharushiPredict /></TharushiProtected>} />
             <Route path="map-calendar"  element={<TharushiProtected><TharushiMapCalendar /></TharushiProtected>} />
             <Route path="historical"    element={<TharushiProtected><TharushiHistorical /></TharushiProtected>} />
+            <Route path="eco-stress"   element={<TharushiProtected><TharushiEcoStress /></TharushiProtected>} />
           </Route>
 
           {/* ── Kavindu (Wildlife Command Center) routes ── */}

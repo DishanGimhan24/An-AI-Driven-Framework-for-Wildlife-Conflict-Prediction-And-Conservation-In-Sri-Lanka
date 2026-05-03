@@ -6,6 +6,7 @@ import Historical from './pages/Historical';
 import Login from './pages/Login';
 import MapCalendar from './pages/MapCalendar';
 import RiskPrediction from './pages/RiskPrediction';
+import EnvironmentalStress from './pages/EnvironmentalStress';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -75,6 +76,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Historical />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="eco-stress"
+        element={
+          <ProtectedRoute>
+            <EnvironmentalStress />
           </ProtectedRoute>
         }
       />

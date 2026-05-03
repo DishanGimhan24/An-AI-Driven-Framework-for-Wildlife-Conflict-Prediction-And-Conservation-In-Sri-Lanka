@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getMonthName } from '../../utils/dateUtils';
 import { getRiskColor } from '../../utils/riskUtils';
 
 export default function MonthlyCalendar({ predictions = [] }) {
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Navigate to the month of the first prediction whenever new forecasts load
+  useEffect(() => {
+    if (predictions.length > 0) {
+      setCurrentDate(new Date(predictions[0].date + 'T00:00:00'));
+    }
+  }, [predictions]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();

@@ -187,9 +187,9 @@ export default function RiskHeatmap({ districtData, viewMode = 'district', selec
         />
 
         {filteredData && (
-          <GeoJSON 
-            key={`${viewMode}-${selectedDistrict}-${JSON.stringify(districtData?.summary)}`}
-            data={filteredData} 
+          <GeoJSON
+            key={`${viewMode}-${selectedDistrict}-${districtData?.date || ''}-${(districtData?.districts || districtData?.cities || []).map(a => `${a.district || a.name}:${a.risk_score}`).join('|')}`}
+            data={filteredData}
             style={getAreaStyle}
             onEachFeature={onEachArea}
           />

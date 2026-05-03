@@ -6,7 +6,10 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/ap
 // Create axios instance
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000, // 30 seconds
+  // District heatmap for dates outside NDVI/rainfall coverage can take
+  // ~45s uncached (25 districts × slow feature extraction). Results are
+  // cached per-date server-side, so subsequent calls are instant.
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json'
   }

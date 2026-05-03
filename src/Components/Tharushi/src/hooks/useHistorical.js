@@ -34,12 +34,12 @@ export const useHistorical = () => {
   };
 
   // Get statistics
-  const getStats = async (startDate = null, endDate = null) => {
+  const getStats = async (startDate = null, endDate = null, district = null) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await getStatistics(startDate, endDate);
+      const response = await getStatistics(startDate, endDate, district);
       
       if (response.status === 'success') {
         setStatistics(response.data);
