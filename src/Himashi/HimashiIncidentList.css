@@ -1,0 +1,200 @@
+.incident-table-page {
+  --incident-green-900: #0f3d2e;
+  --incident-green-800: #134a38;
+  --incident-green-700: #1b5a44;
+  --incident-green-100: #eaf4ee;
+  --incident-green-50: #f6faf7;
+  --incident-ink-900: #12211a;
+  --incident-ink-700: #2a3a30;
+  --incident-ink-400: #6b7b73;
+  --incident-border: #dfe7e1;
+  --incident-border-strong: #c9d9cf;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f4f7f4 0%, #eef3ef 100%);
+  padding: 32px 16px 60px;
+  display: flex;
+  justify-content: center;
+}
+
+.incident-table-card {
+  width: 100%;
+  max-width: 1200px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid var(--incident-border);
+  box-shadow: 0 18px 36px rgba(15, 61, 46, 0.12);
+  overflow: hidden;
+}
+
+.incident-table-header {
+  background: linear-gradient(135deg, var(--incident-green-900) 0%, var(--incident-green-700) 100%);
+  color: #ffffff;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.incident-table-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.incident-table-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #d4eadb;
+}
+
+.incident-table-count {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.incident-table-state {
+  padding: 24px 28px;
+  font-size: 14px;
+  color: var(--incident-ink-700);
+}
+
+.incident-table-state--error {
+  color: #b91c1c;
+}
+
+.incident-table-wrapper {
+  overflow-x: auto;
+  background: #ffffff;
+}
+
+.incident-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1200px;
+}
+
+.incident-table th,
+.incident-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6eee8;
+  text-align: left;
+  font-size: 13px;
+  color: var(--incident-ink-900);
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.incident-table th {
+  background: var(--incident-green-50);
+  color: var(--incident-green-900);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--incident-border-strong);
+}
+
+.incident-table tbody tr:nth-child(odd) {
+  background: #fcfefd;
+}
+
+.incident-table tbody tr:hover {
+  background: var(--incident-green-100);
+}
+
+.incident-table-empty {
+  text-align: center;
+  padding: 24px 14px;
+  color: var(--incident-ink-400);
+}
+
+.incident-table-description {
+  min-width: 220px;
+  max-width: 320px;
+  white-space: normal;
+}
+
+.incident-table-description span {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.incident-table-flag,
+.incident-table-number,
+.incident-table-date,
+.incident-table-time {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.incident-table-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.incident-cell--muted {
+  color: var(--incident-ink-400);
+  font-style: italic;
+}
+
+.incident-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
+  min-width: 54px;
+}
+
+.incident-pill--yes {
+  background: rgba(34, 197, 94, 0.14);
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.incident-pill--no {
+  background: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.incident-pill--day {
+  background: rgba(250, 204, 21, 0.2);
+  color: #92400e;
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+.incident-pill--night {
+  background: rgba(30, 64, 175, 0.12);
+  color: #1e3a8a;
+  border-color: rgba(30, 64, 175, 0.3);
+}
+
+.incident-pill--neutral {
+  background: rgba(148, 163, 184, 0.12);
+  color: #475569;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+@media (max-width: 860px) {
+  .incident-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .incident-table {
+    min-width: 980px;
+  }
+}
