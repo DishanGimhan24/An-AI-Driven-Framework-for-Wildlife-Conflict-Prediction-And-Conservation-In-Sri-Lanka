@@ -35,6 +35,14 @@ export default function Historical() {
   };
 
   const getDistrictData = () => {
+    // Prefer server-computed breakdown (always accurate, even when conflicts array is paginated/empty)
+    if (statistics?.by_district && Object.keys(statistics.by_district).length > 0) {
+      return Object.entries(statistics.by_district)
+        .map(([d, count]) => ({ district: d, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    }
+    // Fallback: compute from locally loaded conflicts
     if (!conflicts?.length) return [];
     const counts = {};
     conflicts.forEach(c => {
@@ -58,7 +66,7 @@ export default function Historical() {
   const statSummary = [
     { label: 'Total Conflicts', value: statistics?.total_conflicts || conflicts.length || 0, color: 'var(--emerald-400)', note: 'Selected period' },
     { label: 'Elephant Deaths (Train)', value: elephantDeaths.reduce((s, i) => s + i.Deaths, 0), color: '#f87171', note: '2022\u20132025' },
-    { label: 'Districts Affected', value: districtData.length, color: '#fbbf24', note: 'Unique districts' },
+    { label: 'Districts Affected', value: statistics?.districts_affected ?? districtData.length, color: '#fbbf24', note: 'Unique districts' },
     { label: 'Avg Per Month', value: statistics?.avg_per_month || 0, color: '#818cf8', note: 'Conflict rate' },
   ];
 
