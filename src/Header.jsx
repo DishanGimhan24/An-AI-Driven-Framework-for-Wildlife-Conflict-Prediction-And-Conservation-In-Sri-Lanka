@@ -21,6 +21,7 @@ export default function Header() {
         <NavLink to="/risk-dashboard"  className={({ isActive }) => isActive ? 'active' : ''}>Risk Dashboard</NavLink>
         <NavLink to="/risk-map"        className={({ isActive }) => isActive ? 'active' : ''}>Risk Map</NavLink>
         <NavLink to="/risk-prediction" className={({ isActive }) => isActive ? 'active' : ''}>Risk Prediction</NavLink>
+        <NavLink to="/add-incident"    className={({ isActive }) => isActive ? 'active' : ''}>Add Incident</NavLink>
       </nav>
       <div className="app-header__status">
         <div className="app-header__status-dot" />
