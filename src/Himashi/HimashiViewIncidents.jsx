@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bus, Car, HeartPulse, Moon, PawPrint, Search, Skull, Sun, Train } from "lucide-react";
+import { Bus, Car, HeartPulse, Moon, PawPrint, Pencil, Search, Skull, Sun, Train, Trash2 } from "lucide-react";
 import "./HimashiIncidentList.css";
 
 const formatDate = (value) => {
@@ -364,12 +364,13 @@ export default function HimashiViewIncidents() {
                     <th className="incident-table-flag">Injury to Human</th>
                     <th className="incident-table-flag">Human Death</th>
                     <th>Description</th>
+                    <th className="incident-table-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredIncidents.length === 0 && (
                     <tr>
-                      <td colSpan={16} className="incident-table-empty">
+                      <td colSpan={17} className="incident-table-empty">
                         {emptyMessage}
                       </td>
                     </tr>
@@ -405,6 +406,24 @@ export default function HimashiViewIncidents() {
                         title={formatValue(incident.description) === "Not Available" ? "" : formatValue(incident.description)}
                       >
                         {renderText(incident.description)}
+                      </td>
+                      <td className="incident-table-actions">
+                        <div className="incident-action-buttons">
+                          <button
+                            type="button"
+                            className="incident-action-btn incident-action-btn--edit"
+                            aria-label="Edit incident"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="incident-action-btn incident-action-btn--delete"
+                            aria-label="Delete incident"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

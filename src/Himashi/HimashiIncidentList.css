@@ -363,6 +363,54 @@
   white-space: nowrap;
 }
 
+.incident-table-actions {
+  text-align: center;
+  white-space: nowrap;
+  width: 110px;
+}
+
+.incident-action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.incident-action-btn {
+  border: 1px solid #e2e8e4;
+  background: #ffffff;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.incident-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(15, 61, 46, 0.12);
+}
+
+.incident-action-btn--edit {
+  color: #1f6f43;
+  border-color: rgba(31, 111, 67, 0.25);
+}
+
+.incident-action-btn--edit:hover {
+  border-color: rgba(31, 111, 67, 0.45);
+}
+
+.incident-action-btn--delete {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+.incident-action-btn--delete:hover {
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
 .incident-table-no {
   text-align: center;
   width: 48px;
