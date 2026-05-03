@@ -26,7 +26,7 @@ export default function Historical() {
 
   const loadData = async () => {
     await getConflicts(startDate, endDate, district || null);
-    await getStats(startDate, endDate);
+    await getStats(startDate, endDate, district || null);
   };
 
   const getMonthlyTrends = () => {

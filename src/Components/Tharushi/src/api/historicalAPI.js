@@ -17,12 +17,13 @@ export const getHistoricalConflicts = async (startDate = null, endDate = null, d
 };
 
 // Get statistics
-export const getStatistics = async (startDate = null, endDate = null) => {
+export const getStatistics = async (startDate = null, endDate = null, district = null) => {
   try {
     const params = {};
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
-    
+    if (district) params.district = district;
+
     const response = await apiClient.get('/conflict-stats', { params });
     return response.data;
   } catch (error) {

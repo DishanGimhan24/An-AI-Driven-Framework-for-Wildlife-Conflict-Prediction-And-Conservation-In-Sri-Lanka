@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Map, Calendar } from 'lucide-react';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
@@ -11,6 +11,7 @@ import MonthlyCalendar from '../components/features/MonthlyCalendar';
 import RiskHeatmap from '../components/features/RiskHeatmap';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
+import { getHistoricalConflicts } from '../api/historicalAPI';
 import { useCityHeatmap } from '../hooks/useCityHeatmap';
 import { useForecast } from '../hooks/useForecast';
 import { useHeatmap } from '../hooks/useHeatmap';
@@ -35,6 +36,50 @@ const VIEW_BTN_INACTIVE = {
   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#9ca3af',
 };
 
+// Assign each raw incident (lat/lon) to the nearest district by straight-line
+// distance, then derive a risk level from the per-district incident count.
+// This produces genuinely date-specific results for past dates instead of the
+// ML model's season-averaged predictions.
+function buildHistoricalDistrictData(conflicts, date) {
+  const districtNames = Object.keys(DISTRICT_COORDINATES);
+  const counts = Object.fromEntries(districtNames.map(d => [d, 0]));
+
+  conflicts.forEach(c => {
+    const lat = parseFloat(c.latitude);
+    const lon = parseFloat(c.longitude);
+    if (isNaN(lat) || isNaN(lon)) return;
+    let nearest = null;
+    let minDist = Infinity;
+    districtNames.forEach(name => {
+      const co = DISTRICT_COORDINATES[name];
+      const dist = Math.hypot(lat - co.lat, lon - co.lng);
+      if (dist < minDist) { minDist = dist; nearest = name; }
+    });
+    if (nearest) counts[nearest]++;
+  });
+
+  const districts = districtNames.map(name => {
+    const n = counts[name];
+    return {
+      district: name,
+      risk_level: n >= 3 ? 'HIGH' : n >= 1 ? 'MEDIUM' : 'LOW',
+      risk_score: n >= 3 ? 0.85 : n >= 1 ? 0.55 : 0.15,
+      incident_count: n,
+    };
+  });
+
+  const high = districts.filter(d => d.risk_level === 'HIGH').length;
+  const medium = districts.filter(d => d.risk_level === 'MEDIUM').length;
+  const low = districts.filter(d => d.risk_level === 'LOW').length;
+
+  return {
+    date,
+    type: 'historical',
+    districts,
+    summary: { high_risk_districts: high, medium_risk_districts: medium, low_risk_districts: low },
+  };
+}
+
 export default function MapCalendar() {
   const [activeTab, setActiveTab] = useState('map');
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -42,15 +87,82 @@ export default function MapCalendar() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [calendarPredictions, setCalendarPredictions] = useState([]);
   const [viewMode, setViewMode] = useState('district');
+  // Holds transformed historical incident data when a past date is selected;
+  // null when showing ML predictions for today / future.
+  const [overrideDistrictData, setOverrideDistrictData] = useState(null);
+  const [loadingHistorical, setLoadingHistorical] = useState(false);
 
   const { getForecast, loading: forecasting } = useForecast();
   const { districtData, loading: loadingHeatmap, error: heatmapError, loadDistrictHeatmap } = useHeatmap();
   const { cityHeatmapData, loading: loadingCityHeatmap, loadCityHeatmap } = useCityHeatmap();
 
+  // Route to the correct data source based on whether the date is past, today, or future.
+  //
+  // Past  → /api/conflicts for the FULL MONTH containing the selected date.
+  //         The GBIF occurrence dataset has ~1,300 records (2007–2026); a single-day
+  //         query almost always returns 0 because data is sparse and the backend's
+  //         end_date filter uses midnight-comparison (records with timestamps like
+  //         "2025-06-15T10:30" are excluded by <= 2025-06-15 00:00:00).  Using the
+  //         full month (start = 1st, end = 1st of NEXT month) captures all records
+  //         and gives genuine per-month variation (Aug 2024 = 68 incidents, May 2024
+  //         = 2 incidents, etc.).  Falls back to ML prediction when 0 incidents found.
+  //
+  // Today → /api/heatmap/districts  (current ML prediction)
+  // Future → /api/heatmap/districts  (seasonal ML forecast)
+  const loadMapDataForDate = async (date) => {
+    const today = getTodayDate();
+
+    if (date < today) {
+      setLoadingHistorical(true);
+      setOverrideDistrictData(null);
+      try {
+        // Build full-month window.  Use first day of NEXT month as end_date so
+        // the backend's '<= midnight' comparison includes all records in the month,
+        // including those on the last day with time components (e.g. "2024-08-31T15:30").
+        const [y, m] = date.split('-').map(Number);
+        const monthStr = String(m).padStart(2, '0');
+        const firstDay = `${y}-${monthStr}-01`;
+        const nextM = m === 12 ? 1 : m + 1;
+        const nextY = m === 12 ? y + 1 : y;
+        const firstDayNextMonth = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+
+        console.log(`Fetching risk data for date: ${date} (past → /api/conflicts, window: ${firstDay} to ${firstDayNextMonth})`);
+        const resp = await getHistoricalConflicts(firstDay, firstDayNextMonth);
+        const conflicts = resp.data?.conflicts ?? [];
+        console.log(`Fetching risk data for date: ${date}, raw conflict count: ${conflicts.length}, response:`, resp.data);
+
+        if (conflicts.length === 0) {
+          // No recorded incidents for this month — use ML seasonal estimate as fallback.
+          console.warn(`No historical incidents for ${firstDay}–${firstDayNextMonth}; falling back to ML prediction`);
+          setOverrideDistrictData(null);
+          const result = await loadDistrictHeatmap(date);
+          console.log(`Fetching risk data for date: ${date} (ML fallback), response:`, result);
+        } else {
+          const historical = buildHistoricalDistrictData(conflicts, date);
+          console.log(`Fetching risk data for date: ${date}, transformed historical district data:`, historical);
+          setOverrideDistrictData(historical);
+        }
+      } catch (err) {
+        console.error(`Historical fetch failed for ${date}, falling back to ML prediction:`, err);
+        setOverrideDistrictData(null);
+        const result = await loadDistrictHeatmap(date);
+        console.log(`Fetching risk data for date: ${date} (error fallback ML), response:`, result);
+      } finally {
+        setLoadingHistorical(false);
+      }
+    } else {
+      setOverrideDistrictData(null);
+      console.log(`Fetching risk data for date: ${date} (${date === today ? 'today' : 'future'} → /api/heatmap/districts)`);
+      const result = await loadDistrictHeatmap(date);
+      console.log(`Fetching risk data for date: ${date}, response:`, result);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'map' && viewMode === 'district') {
-      loadDistrictHeatmap(getTodayDate());
+      loadMapDataForDate(selectedDate);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, viewMode]);
 
   useEffect(() => {
@@ -73,13 +185,13 @@ export default function MapCalendar() {
     const newDate = e.target.value;
     setSelectedDate(newDate);
     if (activeTab === 'map') {
-      if (viewMode === 'district') await loadDistrictHeatmap(newDate);
+      if (viewMode === 'district') await loadMapDataForDate(newDate);
       else if (viewMode === 'city' && selectedDistrict) await loadCityHeatmap(selectedDistrict, newDate);
     }
   };
 
-  const currentHeatmapData = viewMode === 'city' ? cityHeatmapData : districtData;
-  const currentLoading = viewMode === 'city' ? loadingCityHeatmap : loadingHeatmap;
+  const currentHeatmapData = viewMode === 'city' ? cityHeatmapData : (overrideDistrictData || districtData);
+  const currentLoading = viewMode === 'city' ? loadingCityHeatmap : (loadingHistorical || loadingHeatmap);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
@@ -134,9 +246,16 @@ export default function MapCalendar() {
                 <>
                   <div style={{ marginBottom: '16px' }}>
                     <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#d1d5db' }}>
-                      {viewMode === 'city' ? `${selectedDistrict} \u2013 City Level Risk` : 'District Level Risk Map'}
+                      {viewMode === 'city' ? `${selectedDistrict} – City Level Risk` : 'District Level Risk Map'}
                     </h3>
-                    <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>Date: {selectedDate}</p>
+                    <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>
+                      Date: {selectedDate}
+                      {overrideDistrictData && (
+                        <span style={{ marginLeft: '8px', color: '#f59e0b', fontSize: '12px' }}>
+                          (Historical Incidents)
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <RiskHeatmap districtData={currentHeatmapData} viewMode={viewMode} />
                 </>
@@ -208,4 +327,3 @@ export default function MapCalendar() {
     </div>
   );
 }
-

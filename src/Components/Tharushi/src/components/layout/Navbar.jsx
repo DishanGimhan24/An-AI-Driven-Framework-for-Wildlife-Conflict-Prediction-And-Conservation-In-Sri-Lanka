@@ -25,6 +25,7 @@ export default function Navbar() {
     { to: '/tharushi/predict', label: 'Predict Risk' },
     { to: '/tharushi/map-calendar', label: 'Map & Calendar' },
     { to: '/tharushi/historical', label: 'Historical Data' },
+    { to: '/tharushi/eco-stress', label: 'Eco Stress' },
   ];
 
   const isActive = (path) => location.pathname === path;
