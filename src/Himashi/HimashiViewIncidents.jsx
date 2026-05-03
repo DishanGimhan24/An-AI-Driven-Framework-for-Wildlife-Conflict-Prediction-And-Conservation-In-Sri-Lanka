@@ -256,6 +256,29 @@ export default function HimashiViewIncidents() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDeleteIncident = async (incidentId) => {
+    if (!incidentId) {
+      alert("Unable to delete: missing incident id.");
+      return;
+    }
+    const confirmed = window.confirm("Are you sure you want to delete this incident?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/incidents/${incidentId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const message = payload.message || "Failed to delete incident.";
+        throw new Error(message);
+      }
+      setIncidents((prev) => prev.filter((incident) => incident._id !== incidentId));
+    } catch (err) {
+      alert(err.message || "Failed to delete incident.");
+    }
+  };
+
   return (
     <div className="incident-table-page">
       <div className="incident-table-card">
@@ -420,6 +443,7 @@ export default function HimashiViewIncidents() {
                             type="button"
                             className="incident-action-btn incident-action-btn--delete"
                             aria-label="Delete incident"
+                            onClick={() => handleDeleteIncident(incident._id)}
                           >
                             <Trash2 size={14} />
                           </button>
