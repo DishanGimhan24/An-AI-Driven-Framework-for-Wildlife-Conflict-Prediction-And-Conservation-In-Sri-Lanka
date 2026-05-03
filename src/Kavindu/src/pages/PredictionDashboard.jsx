@@ -35,13 +35,17 @@ function RiskBadge({ level }) {
 }
 
 export default function PredictionDashboard() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-based
+
   const [regions, setRegions] = useState([]);
   const [locations, setLocations] = useState([]);
 
   const [region, setRegion] = useState("");
   const [location, setLocation] = useState("");
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(1);
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(currentMonth + 1 <= 12 ? currentMonth + 1 : 1);
 
   const [loadingPredict, setLoadingPredict] = useState(false);
   const [predictError, setPredictError] = useState("");
@@ -98,9 +102,29 @@ export default function PredictionDashboard() {
       .catch(() => { });
   }, [region]);
 
+  // Only months in the future relative to today (for the month dropdown)
+  const availableMonths = useMemo(() => {
+    const y = Number(year);
+    if (y > currentYear) return MONTHS;
+    if (y === currentYear) return MONTHS.filter((m) => m.v > currentMonth);
+    return [];
+  }, [year, currentYear, currentMonth]);
+
   async function onPredict() {
     setPredictError("");
     setResult(null);
+
+    const selectedYear = Number(year);
+    const selectedMonth = Number(month);
+    const isFuture =
+      selectedYear > currentYear ||
+      (selectedYear === currentYear && selectedMonth > currentMonth);
+
+    if (!isFuture) {
+      setPredictError("Only future date predictions are allowed. Please select a month/year that is after the current month.");
+      return;
+    }
+
     setLoadingPredict(true);
 
     try {
@@ -189,7 +213,7 @@ export default function PredictionDashboard() {
               type="number"
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              min={2000}
+              min={currentYear}
               max={2100}
               className="glass-input"
             />
@@ -201,11 +225,15 @@ export default function PredictionDashboard() {
               Month
             </label>
             <select value={month} onChange={(e) => setMonth(e.target.value)} className="glass-input">
-              {MONTHS.map((m) => (
-                <option key={m.v} value={m.v}>
-                  {m.label}
-                </option>
-              ))}
+              {availableMonths.length > 0 ? (
+                availableMonths.map((m) => (
+                  <option key={m.v} value={m.v}>
+                    {m.label}
+                  </option>
+                ))
+              ) : (
+                <option disabled value="">No future months available</option>
+              )}
             </select>
           </div>
         </div>
