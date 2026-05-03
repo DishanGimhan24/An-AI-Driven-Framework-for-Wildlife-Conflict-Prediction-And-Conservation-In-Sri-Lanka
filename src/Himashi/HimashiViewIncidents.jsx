@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bus, Car, HeartPulse, Moon, PawPrint, Pencil, Search, Skull, Sun, Train, Trash2 } from "lucide-react";
+import { HIMASHI_INCIDENTS_API } from "../apiConfig";
 import "./HimashiIncidentList.css";
 
 const formatDate = (value) => {
@@ -9,6 +11,29 @@ const formatDate = (value) => {
 };
 
 const isMissingValue = (value) => value === null || value === undefined || value === "";
+
+const pickIncidentField = (incident, keys) => {
+  for (const key of keys) {
+    const value = incident?.[key];
+    if (!isMissingValue(value)) {
+      return value;
+    }
+  }
+  return "";
+};
+
+const normalizeIncident = (incident = {}) => ({
+  ...incident,
+  incidentDate: pickIncidentField(incident, ["incidentDate", "date"]),
+  incidentTime: pickIncidentField(incident, ["incidentTime", "time"]),
+  villageArea: pickIncidentField(incident, ["villageArea", "village"]),
+  roadRailway: pickIncidentField(incident, ["roadRailway", "road"]),
+  nearestLandmark: pickIncidentField(incident, ["nearestLandmark", "landmark"]),
+  animalCount: pickIncidentField(incident, ["animalCount", "numberOfAnimals"]),
+  animalAge: pickIncidentField(incident, ["animalAge", "age"]),
+  injuryHumans: pickIncidentField(incident, ["injuryHumans", "injuryHuman"]),
+  deathHumans: pickIncidentField(incident, ["deathHumans", "deathHuman"]),
+});
 
 const formatValue = (value, fallback = "Not Available") => {
   if (isMissingValue(value) || value === "-") return fallback;
@@ -108,11 +133,11 @@ const isYesValue = (value) => {
 };
 
 const hasInjury = (incident) => (
-  isYesValue(incident.injuryAnimal) || isYesValue(incident.injuryHuman)
+  isYesValue(incident.injuryAnimal) || isYesValue(incident.injuryHumans)
 );
 
 const hasFatal = (incident) => (
-  isYesValue(incident.deathAnimal) || isYesValue(incident.deathHuman)
+  isYesValue(incident.deathAnimal) || isYesValue(incident.deathHumans)
 );
 
 const matchesQuery = (incident, rawQuery) => {
@@ -121,14 +146,15 @@ const matchesQuery = (incident, rawQuery) => {
   const searchable = [
     incident.province,
     incident.district,
-    incident.village,
-    incident.road,
+    incident.villageArea,
+    incident.roadRailway,
+    incident.nearestLandmark,
     incident.dayNight,
     incident.animalType,
     incident.vehicleType,
     incident.description,
-    incident.time,
-    formatDate(incident.date),
+    incident.incidentTime,
+    formatDate(incident.incidentDate),
   ]
     .map((value) => normalizeValue(value).toLowerCase())
     .filter(Boolean)
@@ -164,6 +190,7 @@ const escapeCsv = (value) => {
 };
 
 export default function HimashiViewIncidents() {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -179,7 +206,7 @@ export default function HimashiViewIncidents() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch("http://localhost:5000/api/incidents", {
+        const response = await fetch(HIMASHI_INCIDENTS_API, {
           signal: controller.signal,
         });
 
@@ -188,7 +215,7 @@ export default function HimashiViewIncidents() {
         }
 
         const data = await response.json();
-        setIncidents(Array.isArray(data) ? data : []);
+        setIncidents(Array.isArray(data) ? data.map(normalizeIncident) : []);
       } catch (err) {
         if (err.name !== "AbortError") {
           setError("Failed to load incidents.");
@@ -223,20 +250,20 @@ export default function HimashiViewIncidents() {
   const handleExportCsv = () => {
     const rows = filteredIncidents.map((incident, index) => ([
       index + 1,
-      formatDate(incident.date),
-      formatValue(incident.time, ""),
+      formatDate(incident.incidentDate),
+      formatValue(incident.incidentTime, ""),
       formatValue(incident.province),
       formatValue(incident.district),
-      formatValue(incident.village),
-      formatValue(incident.road),
+      formatValue(incident.villageArea),
+      formatValue(incident.roadRailway),
       formatValue(incident.dayNight),
       formatValue(incident.animalType),
-      formatValue(incident.numberOfAnimals),
+      formatValue(incident.animalCount),
       formatValue(incident.vehicleType),
       formatValue(incident.injuryAnimal),
       formatValue(incident.deathAnimal),
-      formatValue(incident.injuryHuman),
-      formatValue(incident.deathHuman),
+      formatValue(incident.injuryHumans),
+      formatValue(incident.deathHumans),
       formatValue(incident.description),
     ]));
 
@@ -265,7 +292,7 @@ export default function HimashiViewIncidents() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/incidents/${incidentId}`,
+      const response = await fetch(`${HIMASHI_INCIDENTS_API}/${incidentId}`,
         { method: "DELETE" }
       );
       if (!response.ok) {
@@ -277,6 +304,15 @@ export default function HimashiViewIncidents() {
     } catch (err) {
       alert(err.message || "Failed to delete incident.");
     }
+  };
+
+  const handleEditIncident = (incident) => {
+    if (!incident?._id) {
+      alert("Unable to edit: missing incident id.");
+      return;
+    }
+
+    navigate(`/incidents/${incident._id}/edit`, { state: { incident } });
   };
 
   return (
@@ -406,24 +442,24 @@ export default function HimashiViewIncidents() {
                         : "";
                     return (
                     <tr
-                      key={incident._id || `${incident.date}-${incident.time}`}
+                      key={incident._id || `${incident.incidentDate}-${incident.incidentTime}`}
                       className={rowClass}
                     >
                       <td className="incident-table-no">{index + 1}</td>
-                      <td className="incident-table-date">{renderText(formatDate(incident.date), "-")}</td>
-                      <td className="incident-table-time">{renderText(incident.time, "-")}</td>
+                      <td className="incident-table-date">{renderText(formatDate(incident.incidentDate), "-")}</td>
+                      <td className="incident-table-time">{renderText(incident.incidentTime, "-")}</td>
                       <td>{renderText(incident.province)}</td>
                       <td>{renderText(incident.district)}</td>
-                      <td>{renderText(incident.village)}</td>
-                      <td>{renderText(incident.road)}</td>
+                      <td>{renderText(incident.villageArea)}</td>
+                      <td>{renderText(incident.roadRailway)}</td>
                       <td className="incident-table-flag">{renderDayNightBadge(incident.dayNight)}</td>
                       <td>{renderAnimalBadge(incident.animalType)}</td>
-                      <td className="incident-table-number">{renderText(incident.numberOfAnimals)}</td>
+                      <td className="incident-table-number">{renderText(incident.animalCount)}</td>
                       <td>{renderVehicleBadge(incident.vehicleType)}</td>
                       <td className="incident-table-flag">{renderBooleanBadge(incident.injuryAnimal)}</td>
                       <td className="incident-table-flag">{renderBooleanBadge(incident.deathAnimal)}</td>
-                      <td className="incident-table-flag">{renderBooleanBadge(incident.injuryHuman)}</td>
-                      <td className="incident-table-flag">{renderBooleanBadge(incident.deathHuman)}</td>
+                      <td className="incident-table-flag">{renderBooleanBadge(incident.injuryHumans)}</td>
+                      <td className="incident-table-flag">{renderBooleanBadge(incident.deathHumans)}</td>
                       <td
                         className="incident-table-description"
                         title={formatValue(incident.description) === "Not Available" ? "" : formatValue(incident.description)}
@@ -436,6 +472,7 @@ export default function HimashiViewIncidents() {
                             type="button"
                             className="incident-action-btn incident-action-btn--edit"
                             aria-label="Edit incident"
+                            onClick={() => handleEditIncident(incident)}
                           >
                             <Pencil size={14} />
                           </button>

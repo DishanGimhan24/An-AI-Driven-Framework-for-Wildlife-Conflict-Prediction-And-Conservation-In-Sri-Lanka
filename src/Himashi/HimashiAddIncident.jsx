@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { MapPin, Calendar, Leaf, Car, AlertTriangle, FileText, List, Search, FileDown } from "lucide-react";
+import { HIMASHI_INCIDENTS_API } from "../apiConfig";
 import "./HimashiAddIncident.css";
 
 const INITIAL_FORM = {
@@ -132,6 +133,36 @@ const REQUIRED_MESSAGES = {
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
 const MAX_DESCRIPTION_LENGTH = 250;
 
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+  return date.toISOString().slice(0, 10);
+};
+
+const mapIncidentToForm = (incident) => ({
+  province: incident?.province ?? "",
+  district: incident?.district ?? "",
+  villageArea: incident?.villageArea ?? incident?.village ?? "",
+  roadRailway: incident?.roadRailway ?? incident?.road ?? "",
+  nearestLandmark: incident?.nearestLandmark ?? incident?.landmark ?? "",
+  incidentDate: toDateInputValue(incident?.incidentDate ?? incident?.date),
+  incidentTime: incident?.incidentTime ?? incident?.time ?? "",
+  dayNight: incident?.dayNight ?? "",
+  animalType: incident?.animalType ?? "",
+  animalCount: incident?.animalCount ?? incident?.numberOfAnimals ?? "",
+  animalAge: incident?.animalAge ?? incident?.age ?? "",
+  vehicleType: incident?.vehicleType ?? "",
+  direction: incident?.direction ?? "",
+  injuryAnimal: incident?.injuryAnimal ?? "",
+  deathAnimal: incident?.deathAnimal ?? "",
+  injuryHumans: incident?.injuryHumans ?? incident?.injuryHuman ?? "",
+  deathHumans: incident?.deathHumans ?? incident?.deathHuman ?? "",
+  description: incident?.description ?? "",
+});
+
 const validateOptionalField = (name, value) => {
   if (!value) return "";
   if (name === "animalCount") {
@@ -150,11 +181,74 @@ const validateOptionalField = (name, value) => {
 };
 
 export default function HimashiAddIncident() {
-  const [formData, setFormData] = useState({ ...INITIAL_FORM });
+  const location = useLocation();
+  const { incidentId } = useParams();
   const [formKey, setFormKey] = useState(0);
+  const [loadedIncident, setLoadedIncident] = useState(null);
+  const [incidentLoading, setIncidentLoading] = useState(Boolean(incidentId && !location.state?.incident?._id));
+  const [incidentLoadError, setIncidentLoadError] = useState("");
+  const incidentToEdit = location.state?.incident ?? loadedIncident;
+  const editingIncidentId = incidentId || incidentToEdit?._id || "";
+  const isEditMode = Boolean(editingIncidentId);
+  const [formData, setFormData] = useState(() => mapIncidentToForm(incidentToEdit));
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const todayString = getTodayString();
+
+  useEffect(() => {
+    if (!incidentId) {
+      setLoadedIncident(null);
+      setIncidentLoading(false);
+      setIncidentLoadError("");
+      return;
+    }
+
+    if (location.state?.incident?._id === incidentId) {
+      setLoadedIncident(location.state.incident);
+      setIncidentLoading(false);
+      setIncidentLoadError("");
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadIncident = async () => {
+      try {
+        setIncidentLoading(true);
+        setIncidentLoadError("");
+
+        const response = await fetch(`${HIMASHI_INCIDENTS_API}/${incidentId}`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.message || "Failed to load incident.");
+        }
+
+        const incident = await response.json();
+        setLoadedIncident(incident);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setIncidentLoadError(error.message || "Failed to load incident.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIncidentLoading(false);
+        }
+      }
+    };
+
+    loadIncident();
+
+    return () => controller.abort();
+  }, [incidentId, location.state]);
+
+  useEffect(() => {
+    setFormData(mapIncidentToForm(incidentToEdit));
+    setFormKey((prev) => prev + 1);
+    setErrors({});
+  }, [incidentToEdit]);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -236,8 +330,10 @@ export default function HimashiAddIncident() {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/incidents/add", {
-        method: "POST",
+      const response = await fetch(
+        isEditMode ? `${HIMASHI_INCIDENTS_API}/${editingIncidentId}` : `${HIMASHI_INCIDENTS_API}/add`,
+        {
+        method: isEditMode ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -245,23 +341,36 @@ export default function HimashiAddIncident() {
       });
 
       if (!response.ok) {
-        throw new Error("Request failed");
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.message || "Request failed");
+      }
+
+      await response.json().catch(() => null);
+
+      if (isEditMode) {
+        alert("Incident updated successfully");
+        navigate("/incidents");
+        return;
       }
 
       alert("Incident saved successfully");
       handleReset();
     } catch (error) {
-      alert("Failed to save incident");
+      alert(error.message || `Failed to ${isEditMode ? "update" : "save"} incident`);
     }
   };
 
   const handleReset = () => {
-    setFormData({ ...INITIAL_FORM });
+    setFormData(isEditMode ? mapIncidentToForm(incidentToEdit) : { ...INITIAL_FORM });
     setFormKey((prev) => prev + 1);
     setErrors({});
   };
 
   const handleCancel = () => {
+    if (isEditMode) {
+      navigate("/incidents");
+      return;
+    }
     if (window.history.length > 1) {
       navigate(-1);
       return;
@@ -269,14 +378,57 @@ export default function HimashiAddIncident() {
     handleReset();
   };
 
+  if (incidentLoading) {
+    return (
+      <div className="incident-page">
+        <div className="incident-layout">
+          <div className="incident-card">
+            <div className="incident-card__header">
+              <div>
+                <h1>Edit Incident Report</h1>
+                <p>Loading incident details...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (incidentId && incidentLoadError) {
+    return (
+      <div className="incident-page">
+        <div className="incident-layout">
+          <div className="incident-card">
+            <div className="incident-card__header">
+              <div>
+                <h1>Edit Incident Report</h1>
+                <p>{incidentLoadError}</p>
+              </div>
+            </div>
+            <div className="incident-actions">
+              <button type="button" className="incident-btn incident-btn--secondary" onClick={() => navigate("/incidents")}>
+                Back to List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="incident-page">
       <div className="incident-layout">
         <div className="incident-card">
           <div className="incident-card__header">
             <div>
-              <h1>Incident Reporting Form</h1>
-              <p>Official record for wildlife-vehicle collision incidents</p>
+              <h1>{isEditMode ? "Edit Incident Report" : "Incident Reporting Form"}</h1>
+              <p>
+                {isEditMode
+                  ? "Update an existing wildlife-vehicle collision record"
+                  : "Official record for wildlife-vehicle collision incidents"}
+              </p>
             </div>
           </div>
 
@@ -641,9 +793,9 @@ export default function HimashiAddIncident() {
           </section>
 
           <div className="incident-actions">
-            <button type="submit" className="incident-btn incident-btn--primary">Save Incident</button>
-            <button type="button" className="incident-btn incident-btn--secondary" onClick={handleReset}>Reset Form</button>
-            <button type="button" className="incident-btn incident-btn--secondary" onClick={() => navigate("/incidents")}>View Data</button>
+            <button type="submit" className="incident-btn incident-btn--primary">{isEditMode ? "Update Incident" : "Save Incident"}</button>
+            <button type="button" className="incident-btn incident-btn--secondary" onClick={handleReset}>{isEditMode ? "Reset Changes" : "Reset Form"}</button>
+            <button type="button" className="incident-btn incident-btn--secondary" onClick={() => navigate("/incidents")}>{isEditMode ? "Back to List" : "View Data"}</button>
             <button type="button" className="incident-btn incident-btn--danger" onClick={handleCancel}>Cancel</button>
           </div>
           </form>
@@ -685,7 +837,7 @@ export default function HimashiAddIncident() {
               <li>Provide accurate location details.</li>
               <li>Use the correct time and date.</li>
               <li>Add a full description of the incident.</li>
-              <li>Click Save Incident to record.</li>
+              <li>{isEditMode ? "Click Update Incident to save your changes." : "Click Save Incident to record."}</li>
             </ul>
           </div>
 

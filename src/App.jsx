@@ -88,6 +88,7 @@ function App() {
           <Route path="/risk-summary"       element={<HimashiRiskSummary />} />
           <Route path="/risk-locations"     element={<HimashiRiskLocations />} />
           <Route path="/add-incident"       element={<HimashiAddIncident />} />
+          <Route path="/incidents/:incidentId/edit" element={<HimashiAddIncident />} />
           <Route path="/incidents"          element={<HimashiViewIncidents />} />
 
           {/* ── Tharushi (ELESAFE) routes ── */}
