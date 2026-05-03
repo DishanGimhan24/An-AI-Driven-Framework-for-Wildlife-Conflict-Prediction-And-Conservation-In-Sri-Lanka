@@ -131,6 +131,11 @@
   gap: 4px;
 }
 
+.incident-error {
+  font-size: 12px;
+  color: #b91c1c;
+}
+
 .incident-field input,
 .incident-field select,
 .incident-field textarea {
