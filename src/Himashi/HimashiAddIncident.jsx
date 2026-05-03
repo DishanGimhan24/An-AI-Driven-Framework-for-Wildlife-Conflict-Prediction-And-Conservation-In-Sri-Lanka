@@ -115,28 +115,103 @@ const getTodayString = () => {
   return `${year}-${month}-${day}`;
 };
 
+const REQUIRED_MESSAGES = {
+  province: "Province is required.",
+  district: "District is required.",
+  villageArea: "Locality / Area is required.",
+  roadRailway: "Roadway / Railway Line is required.",
+  incidentDate: "Date is required.",
+  animalType: "Animal Type is required.",
+  vehicleType: "Vehicle Type is required.",
+  injuryAnimal: "Please select injury to animal.",
+  deathAnimal: "Please select death of animal.",
+  injuryHumans: "Please select injury to humans.",
+  deathHumans: "Please select death of humans.",
+};
+
+const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+const MAX_DESCRIPTION_LENGTH = 250;
+
+const validateOptionalField = (name, value) => {
+  if (!value) return "";
+  if (name === "animalCount") {
+    const count = Number(value);
+    if (!Number.isFinite(count) || count <= 0) {
+      return "Number of animals must be a positive value.";
+    }
+  }
+  if (name === "incidentTime" && !TIME_PATTERN.test(value)) {
+    return "Enter a valid time (HH:MM).";
+  }
+  if (name === "description" && value.length > MAX_DESCRIPTION_LENGTH) {
+    return `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`;
+  }
+  return "";
+};
+
 export default function HimashiAddIncident() {
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
   const [formKey, setFormKey] = useState(0);
-  const [dateError, setDateError] = useState("");
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const todayString = getTodayString();
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    if (name === "incidentDate") {
-      const error = value && value > todayString
-        ? "Incident date cannot be a future date."
-        : "";
-      setDateError(error);
-    }
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (name === "incidentDate") {
+        if (value && value > todayString) {
+          next.incidentDate = "Incident date cannot be a future date.";
+          return next;
+        }
+        delete next.incidentDate;
+        return next;
+      }
+
+      const optionalMessage = validateOptionalField(name, value);
+      if (optionalMessage) {
+        next[name] = optionalMessage;
+        return next;
+      }
+
+      if (REQUIRED_MESSAGES[name]) {
+        if (value) {
+          delete next[name];
+        }
+        return next;
+      }
+
+      if (!value && next[name]) {
+        delete next[name];
+      }
+      return next;
+    });
   };
 
   const handleSave = async (event) => {
     event.preventDefault();
+    const nextErrors = {};
+    Object.entries(REQUIRED_MESSAGES).forEach(([field, message]) => {
+      if (!formData[field]) {
+        nextErrors[field] = message;
+      }
+    });
+
     if (formData.incidentDate && formData.incidentDate > todayString) {
-      setDateError("Incident date cannot be a future date.");
+      nextErrors.incidentDate = "Incident date cannot be a future date.";
+    }
+
+    ["animalCount", "incidentTime", "description"].forEach((field) => {
+      const message = validateOptionalField(field, formData[field]);
+      if (message) {
+        nextErrors[field] = message;
+      }
+    });
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
     const payload = {
@@ -183,7 +258,7 @@ export default function HimashiAddIncident() {
   const handleReset = () => {
     setFormData({ ...INITIAL_FORM });
     setFormKey((prev) => prev + 1);
-    setDateError("");
+    setErrors({});
   };
 
   const handleCancel = () => {
@@ -229,6 +304,7 @@ export default function HimashiAddIncident() {
                     <option key={province} value={province}>{province}</option>
                   ))}
                 </select>
+                {errors.province && <div className="incident-error">{errors.province}</div>}
               </div>
               <div className="incident-field">
                 <label htmlFor="district">District <span className="incident-required">*</span></label>
@@ -243,6 +319,7 @@ export default function HimashiAddIncident() {
                     <option key={district} value={district}>{district}</option>
                   ))}
                 </select>
+                {errors.district && <div className="incident-error">{errors.district}</div>}
               </div>
               <div className="incident-field">
                 <label htmlFor="villageArea">Locality / Area <span className="incident-required">*</span></label>
@@ -254,6 +331,7 @@ export default function HimashiAddIncident() {
                   value={formData.villageArea}
                   onChange={handleInputChange}
                 />
+                {errors.villageArea && <div className="incident-error">{errors.villageArea}</div>}
               </div>
               <div className="incident-field">
                 <label htmlFor="roadRailway">Roadway / Railway Line <span className="incident-required">*</span></label>
@@ -271,9 +349,10 @@ export default function HimashiAddIncident() {
                     <option key={option} value={option} />
                   ))}
                 </datalist>
+                {errors.roadRailway && <div className="incident-error">{errors.roadRailway}</div>}
               </div>
               <div className="incident-field">
-                <label htmlFor="nearestLandmark">Nearest Landmark / Milepost <span className="incident-required">*</span></label>
+                <label htmlFor="nearestLandmark">Nearest Landmark / Milepost</label>
                 <input
                   id="nearestLandmark"
                   name="nearestLandmark"
@@ -299,19 +378,19 @@ export default function HimashiAddIncident() {
                   name="incidentDate"
                   type="date"
                   max={todayString}
-                  aria-invalid={Boolean(dateError)}
-                  aria-describedby={dateError ? "incidentDate-error" : undefined}
+                  aria-invalid={Boolean(errors.incidentDate)}
+                  aria-describedby={errors.incidentDate ? "incidentDate-error" : undefined}
                   value={formData.incidentDate}
                   onChange={handleInputChange}
                 />
-                {dateError && (
+                {errors.incidentDate && (
                   <div id="incidentDate-error" role="alert" style={{ color: "#b91c1c", fontSize: "12px" }}>
-                    {dateError}
+                    {errors.incidentDate}
                   </div>
                 )}
               </div>
               <div className="incident-field">
-                <label htmlFor="incidentTime">Time <span className="incident-required">*</span></label>
+                <label htmlFor="incidentTime">Time</label>
                 <input
                   id="incidentTime"
                   name="incidentTime"
@@ -319,9 +398,10 @@ export default function HimashiAddIncident() {
                   value={formData.incidentTime}
                   onChange={handleInputChange}
                 />
+                {errors.incidentTime && <div className="incident-error">{errors.incidentTime}</div>}
               </div>
               <div className="incident-field">
-                <label htmlFor="dayNight">Time of Day <span className="incident-required">*</span></label>
+                <label htmlFor="dayNight">Time of Day</label>
                 <select
                   id="dayNight"
                   name="dayNight"
@@ -355,9 +435,10 @@ export default function HimashiAddIncident() {
                     <option key={animal} value={animal}>{animal}</option>
                   ))}
                 </select>
+                {errors.animalType && <div className="incident-error">{errors.animalType}</div>}
               </div>
               <div className="incident-field">
-                <label htmlFor="animalCount">Number of Animals Involved <span className="incident-required">*</span></label>
+                <label htmlFor="animalCount">Number of Animals Involved</label>
                 <input
                   id="animalCount"
                   name="animalCount"
@@ -367,6 +448,7 @@ export default function HimashiAddIncident() {
                   value={formData.animalCount}
                   onChange={handleInputChange}
                 />
+                {errors.animalCount && <div className="incident-error">{errors.animalCount}</div>}
               </div>
               <div className="incident-field">
                 <label htmlFor="animalAge">Age Category (if known)</label>
@@ -404,9 +486,10 @@ export default function HimashiAddIncident() {
                     <option key={vehicle} value={vehicle}>{vehicle}</option>
                   ))}
                 </select>
+                {errors.vehicleType && <div className="incident-error">{errors.vehicleType}</div>}
               </div>
               <div className="incident-field">
-                <label htmlFor="direction">Direction of Travel <span className="incident-required">*</span></label>
+                <label htmlFor="direction">Direction of Travel</label>
                 <input
                   id="direction"
                   name="direction"
@@ -455,6 +538,7 @@ export default function HimashiAddIncident() {
                     No
                   </label>
                 </div>
+                {errors.injuryAnimal && <div className="incident-error">{errors.injuryAnimal}</div>}
               </div>
               <div className="incident-radio-group">
                 <span className="incident-radio-title">Death of Animal <span className="incident-required">*</span></span>
@@ -480,6 +564,7 @@ export default function HimashiAddIncident() {
                     No
                   </label>
                 </div>
+                {errors.deathAnimal && <div className="incident-error">{errors.deathAnimal}</div>}
               </div>
               <div className="incident-radio-group">
                 <span className="incident-radio-title">Injury to Humans <span className="incident-required">*</span></span>
@@ -505,6 +590,7 @@ export default function HimashiAddIncident() {
                     No
                   </label>
                 </div>
+                {errors.injuryHumans && <div className="incident-error">{errors.injuryHumans}</div>}
               </div>
               <div className="incident-radio-group">
                 <span className="incident-radio-title">Death of Humans <span className="incident-required">*</span></span>
@@ -530,6 +616,7 @@ export default function HimashiAddIncident() {
                     No
                   </label>
                 </div>
+                {errors.deathHumans && <div className="incident-error">{errors.deathHumans}</div>}
               </div>
             </div>
           </section>
@@ -540,7 +627,7 @@ export default function HimashiAddIncident() {
               <h2>6. Incident Narrative</h2>
             </div>
             <div className="incident-field">
-              <label htmlFor="description">Incident Description <span className="incident-required">*</span></label>
+              <label htmlFor="description">Incident Description</label>
               <textarea
                 id="description"
                 name="description"
@@ -549,6 +636,7 @@ export default function HimashiAddIncident() {
                 value={formData.description}
                 onChange={handleInputChange}
               />
+              {errors.description && <div className="incident-error">{errors.description}</div>}
             </div>
           </section>
 

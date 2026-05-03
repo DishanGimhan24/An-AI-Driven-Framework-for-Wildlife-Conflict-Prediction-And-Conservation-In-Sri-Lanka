@@ -136,6 +136,33 @@ const matchesQuery = (incident, rawQuery) => {
   return searchable.includes(query);
 };
 
+const CSV_HEADERS = [
+  "No",
+  "Date",
+  "Time",
+  "Province",
+  "District",
+  "Village/Area",
+  "Road/Railway Line",
+  "Day/Night",
+  "Animal Type",
+  "No. of Animals",
+  "Vehicle Type",
+  "Injury to Animal",
+  "Death",
+  "Injury to Human",
+  "Human Death",
+  "Description",
+];
+
+const escapeCsv = (value) => {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+};
+
 export default function HimashiViewIncidents() {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,6 +220,42 @@ export default function HimashiViewIncidents() {
     ? "No incidents found."
     : "No incidents match the current filters.";
 
+  const handleExportCsv = () => {
+    const rows = filteredIncidents.map((incident, index) => ([
+      index + 1,
+      formatDate(incident.date),
+      formatValue(incident.time, ""),
+      formatValue(incident.province),
+      formatValue(incident.district),
+      formatValue(incident.village),
+      formatValue(incident.road),
+      formatValue(incident.dayNight),
+      formatValue(incident.animalType),
+      formatValue(incident.numberOfAnimals),
+      formatValue(incident.vehicleType),
+      formatValue(incident.injuryAnimal),
+      formatValue(incident.deathAnimal),
+      formatValue(incident.injuryHuman),
+      formatValue(incident.deathHuman),
+      formatValue(incident.description),
+    ]));
+
+    const csvContent = [CSV_HEADERS, ...rows]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `incident-report-${dateStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="incident-table-page">
       <div className="incident-table-card">
@@ -233,6 +296,7 @@ export default function HimashiViewIncidents() {
               <button
                 className="incident-toolbar-button"
                 type="button"
+                onClick={handleExportCsv}
               >
                 Generate Report
               </button>
