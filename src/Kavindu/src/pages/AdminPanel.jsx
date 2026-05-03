@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { UserPlus, Edit2, Power, RefreshCw, Shield, Users, UserCheck, UserX, X, Search } from "lucide-react";
+import { UserPlus, Edit2, Power, RefreshCw, Shield, Users, UserCheck, UserX, X, Search, User, Mail, Lock, MapPin, BadgeInfo, Phone } from "lucide-react";
 
 const API = "http://localhost:8002";
 
@@ -57,7 +57,7 @@ function OfficerFormModal({ officer, regions, onClose, onSaved }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" style={{ maxWidth: 640 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <h2 className="modal-title">{isEdit ? "Edit Officer" : "Add New Officer"}</h2>
@@ -66,56 +66,58 @@ function OfficerFormModal({ officer, regions, onClose, onSaved }) {
           <button className="modal-close-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="admin-form">
-          {error && <div className="error" style={{ margin: "0 0 12px" }}>{error}</div>}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          <div style={{ padding: "24px 32px 32px", overflowY: "auto", flex: 1 }}>
+            {error && <div className="error" style={{ margin: "0 0 24px" }}>{error}</div>}
 
-          <div className="admin-form-grid">
-            <div className="form-group">
-              <label>Full Name *</label>
-              <input className="glass-input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Kamal Perera" required={!isEdit} />
-            </div>
-
-            <div className="form-group">
-              <label>Email *</label>
-              <input className="glass-input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="officer@dwd.lk" required={!isEdit} />
-            </div>
-
-            {!isEdit && (
-              <div className="form-group">
-                <label>Password *</label>
-                <input className="glass-input" type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Set initial password" required />
+            <div className="admin-form-grid" style={{ gap: "24px" }}>
+              <div className="input-group">
+                <label><User className="label-icon" size={16} /> Full Name *</label>
+                <input className="glass-input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Kamal Perera" required={!isEdit} />
               </div>
-            )}
 
-            <div className="form-group">
-              <label>Role</label>
-              <select className="glass-input" value={form.role} onChange={(e) => set("role", e.target.value)}>
-                {ROLES.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
-              </select>
-            </div>
+              <div className="input-group">
+                <label><Mail className="label-icon" size={16} /> Email *</label>
+                <input className="glass-input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="officer@dwd.lk" required={!isEdit} />
+              </div>
 
-            <div className="form-group">
-              <label>Region</label>
-              <select className="glass-input" value={form.region} onChange={(e) => set("region", e.target.value)}>
-                <option value="">-- No region assigned --</option>
-                {regions.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
+              {!isEdit && (
+                <div className="input-group">
+                  <label><Lock className="label-icon" size={16} /> Password *</label>
+                  <input className="glass-input" type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Set initial password" required />
+                </div>
+              )}
 
-            <div className="form-group">
-              <label>Badge Number</label>
-              <input className="glass-input" value={form.badge_number} onChange={(e) => set("badge_number", e.target.value)} placeholder="e.g. WO-0042" />
-            </div>
+              <div className="input-group">
+                <label><Shield className="label-icon" size={16} /> Role</label>
+                <select className="glass-input" value={form.role} onChange={(e) => set("role", e.target.value)}>
+                  {ROLES.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Phone</label>
-              <input className="glass-input" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="e.g. +94 77 123 4567" />
+              <div className="input-group">
+                <label><MapPin className="label-icon" size={16} /> Region</label>
+                <select className="glass-input" value={form.region} onChange={(e) => set("region", e.target.value)}>
+                  <option value="">-- No region assigned --</option>
+                  {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label><BadgeInfo className="label-icon" size={16} /> Badge Number</label>
+                <input className="glass-input" value={form.badge_number} onChange={(e) => set("badge_number", e.target.value)} placeholder="e.g. WO-0042" />
+              </div>
+
+              <div className="input-group">
+                <label><Phone className="label-icon" size={16} /> Phone</label>
+                <input className="glass-input" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="e.g. +94 77 123 4567" />
+              </div>
             </div>
           </div>
 
-          <div className="modal-actions" style={{ padding: 0, marginTop: 20 }}>
-            <button type="button" className="modal-cancel-btn" onClick={onClose}>Cancel</button>
-            <button type="submit" className="modal-assign-btn" disabled={saving}>
+          <div className="modal-actions" style={{ justifyContent: "flex-end", padding: "20px 32px", background: "rgba(0,0,0,0.2)", flexShrink: 0 }}>
+            <button type="button" className="modal-cancel-btn" onClick={onClose} style={{ flex: "none", padding: "10px 24px" }}>Cancel</button>
+            <button type="submit" className="modal-assign-btn" disabled={saving} style={{ flex: "none", padding: "10px 24px", width: "auto" }}>
               {isEdit ? <Edit2 size={16} /> : <UserPlus size={16} />}
               {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Officer"}
             </button>
