@@ -46,6 +46,7 @@ import KavinduReport           from './Kavindu/src/pages/Report';               
 import KavinduOfficerLogin     from './Kavindu/src/pages/OfficerLogin';             // /kavindu/officer/login
 import KavinduOfficerDashboard from './Kavindu/src/pages/OfficerDashboard';         // /kavindu/officer/dashboard
 import KavinduAdminPanel       from './Kavindu/src/pages/AdminPanel';               // /kavindu/admin
+import PredictPageV2           from './Kavindu/src/pages/PredictPage';              // /predict-v2
 
 function TharushiLayout() {
   return <AppProvider><Outlet /></AppProvider>;
@@ -75,6 +76,7 @@ function App() {
           <Route path="/road-crossings"     element={<RoadCrossingsPage />} />
           <Route path="/road-crossings-map" element={<RoadCrossingsMapPage />} />
           <Route path="/predict"            element={<PredictPage />} />
+          <Route path="/predict-v2"         element={<PredictPageV2 />} />
 
           {/* ── Himashi (AVC) routes ── */}
           <Route path="/avc-home"           element={<HimashiHome />} />
