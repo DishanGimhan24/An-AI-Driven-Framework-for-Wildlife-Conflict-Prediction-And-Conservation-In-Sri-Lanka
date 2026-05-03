@@ -12,6 +12,46 @@ const formatValue = (value) => {
   return value;
 };
 
+const normalizeValue = (value) => String(value ?? "").trim();
+
+const renderText = (value) => {
+  const formatted = formatValue(value);
+  const isEmpty = formatted === "-";
+  return (
+    <span className={isEmpty ? "incident-cell--muted" : undefined}>
+      {formatted}
+    </span>
+  );
+};
+
+const renderBooleanBadge = (value) => {
+  const normalized = normalizeValue(value).toLowerCase();
+  if (!normalized) {
+    return <span className="incident-pill incident-pill--neutral">-</span>;
+  }
+  if (["yes", "y", "true", "1"].includes(normalized)) {
+    return <span className="incident-pill incident-pill--yes">Yes</span>;
+  }
+  if (["no", "n", "false", "0"].includes(normalized)) {
+    return <span className="incident-pill incident-pill--no">No</span>;
+  }
+  return <span className="incident-pill incident-pill--neutral">{value}</span>;
+};
+
+const renderDayNightBadge = (value) => {
+  const normalized = normalizeValue(value).toLowerCase();
+  if (!normalized) {
+    return <span className="incident-pill incident-pill--neutral">-</span>;
+  }
+  if (normalized === "day") {
+    return <span className="incident-pill incident-pill--day">Day</span>;
+  }
+  if (normalized === "night") {
+    return <span className="incident-pill incident-pill--night">Night</span>;
+  }
+  return <span className="incident-pill incident-pill--neutral">{value}</span>;
+};
+
 export default function HimashiViewIncidents() {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,16 +115,16 @@ export default function HimashiViewIncidents() {
                   <th>District</th>
                   <th>Village/Area</th>
                   <th>Road/Railway Line</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Day/Night</th>
+                  <th className="incident-table-date">Date</th>
+                  <th className="incident-table-time">Time</th>
+                  <th className="incident-table-flag">Day/Night</th>
                   <th>Animal Type</th>
-                  <th>Number of Animals</th>
+                  <th className="incident-table-number">Number of Animals</th>
                   <th>Vehicle Type</th>
-                  <th>Injury to Animal</th>
-                  <th>Death</th>
-                  <th>Injury to Human</th>
-                  <th>Human Death</th>
+                  <th className="incident-table-flag">Injury to Animal</th>
+                  <th className="incident-table-flag">Death</th>
+                  <th className="incident-table-flag">Injury to Human</th>
+                  <th className="incident-table-flag">Human Death</th>
                   <th>Description</th>
                 </tr>
               </thead>
@@ -98,22 +138,25 @@ export default function HimashiViewIncidents() {
                 )}
                 {incidents.map((incident) => (
                   <tr key={incident._id || `${incident.date}-${incident.time}`}>
-                    <td>{formatValue(incident.province)}</td>
-                    <td>{formatValue(incident.district)}</td>
-                    <td>{formatValue(incident.village)}</td>
-                    <td>{formatValue(incident.road)}</td>
-                    <td>{formatDate(incident.date)}</td>
-                    <td>{formatValue(incident.time)}</td>
-                    <td>{formatValue(incident.dayNight)}</td>
-                    <td>{formatValue(incident.animalType)}</td>
-                    <td>{formatValue(incident.numberOfAnimals)}</td>
-                    <td>{formatValue(incident.vehicleType)}</td>
-                    <td>{formatValue(incident.injuryAnimal)}</td>
-                    <td>{formatValue(incident.deathAnimal)}</td>
-                    <td>{formatValue(incident.injuryHuman)}</td>
-                    <td>{formatValue(incident.deathHuman)}</td>
-                    <td className="incident-table-description">
-                      {formatValue(incident.description)}
+                    <td>{renderText(incident.province)}</td>
+                    <td>{renderText(incident.district)}</td>
+                    <td>{renderText(incident.village)}</td>
+                    <td>{renderText(incident.road)}</td>
+                    <td className="incident-table-date">{renderText(formatDate(incident.date))}</td>
+                    <td className="incident-table-time">{renderText(incident.time)}</td>
+                    <td className="incident-table-flag">{renderDayNightBadge(incident.dayNight)}</td>
+                    <td>{renderText(incident.animalType)}</td>
+                    <td className="incident-table-number">{renderText(incident.numberOfAnimals)}</td>
+                    <td>{renderText(incident.vehicleType)}</td>
+                    <td className="incident-table-flag">{renderBooleanBadge(incident.injuryAnimal)}</td>
+                    <td className="incident-table-flag">{renderBooleanBadge(incident.deathAnimal)}</td>
+                    <td className="incident-table-flag">{renderBooleanBadge(incident.injuryHuman)}</td>
+                    <td className="incident-table-flag">{renderBooleanBadge(incident.deathHuman)}</td>
+                    <td
+                      className="incident-table-description"
+                      title={formatValue(incident.description) === "-" ? "" : formatValue(incident.description)}
+                    >
+                      {renderText(incident.description)}
                     </td>
                   </tr>
                 ))}
